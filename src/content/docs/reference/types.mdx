@@ -1,0 +1,127 @@
+---
+title: Tipos, Enums e Interfaces
+description: Referencia completa de las definiciones de TypeScript exportadas por Fang JS.
+---
+
+import { Aside, Card, CardGrid } from "@astrojs/starlight/components";
+
+Fang JS está construido pensando en la máxima seguridad de tipos. Esta página contiene la referencia de los Enums e Interfaces que puedes importar para mantener tu código consistente y aprovechar el IntelliSense.
+
+---
+
+## Enums
+
+Los Enums ayudan a evitar errores de escritura ("magic strings") en tu lógica de negocio.
+
+### `httpStatus`
+
+Define los códigos de respuesta semánticos más comunes.
+
+| Miembro         | Valor | Descripción                                 |
+| :-------------- | :---- | :------------------------------------------ |
+| `OK`            | `200` | Petición exitosa.                           |
+| `Created`       | `201` | Recurso creado con éxito.                   |
+| `NoContent`     | `204` | Éxito sin cuerpo de respuesta.              |
+| `BadRequest`    | `400` | Error de sintaxis o validación del cliente. |
+| `Unauthorized`  | `401` | Requiere autenticación.                     |
+| `NotFound`      | `404` | Recurso no encontrado.                      |
+| `InternalError` | `500` | Error inesperado en el servidor.            |
+
+### `TokenExpiration`
+
+Valores preconfigurados en segundos para la expiración de JWT o Cookies.
+
+- `FifteenMinutes`: 900s
+- `OneHour`: 3600s
+- `TwelveHours`: 43200s
+- `OneDay`: 86400s
+- `OneWeek`: 604800s
+- `OneMonth`: 2592000s
+
+### `colors`
+
+Códigos ANSI utilizados por el `Logger`.
+`green`, `blue`, `yellow`, `cyan`, `magenta`, `red`, `reset`.
+
+---
+
+## Tipos de Funciones
+
+Estos tipos definen la firma de las funciones que procesan tus peticiones.
+
+### `Middleware`
+
+La firma para funciones que están en medio del ciclo de vida.
+
+```typescript
+type Middleware = (ctx: Context, next: NextFunction) => Promise<void> | void;
+```
+
+### `Handler`
+
+La firma para el controlador final de una ruta.
+
+```typescript
+type Handler = (ctx: Context) => Promise<void> | void;
+```
+
+## Interfaces y Types de Configuración
+
+### `CorsOptions`
+
+Opciones para el middleware de `cors()`.
+
+1. **origin:** `string` | `string[]` | `((origin: string) => boolean)`.
+
+2. **methods:** Array de methods `(Enum de GET, POST, etc.)`.
+
+3. **allowedHeaders:** `string[]` de cabeceras permitidas.
+
+4. **credentials:** `boolean` para permitir `cookies/auth`.
+
+### `CookieOptions`
+
+Configuración para el método `ctx.setCookie()`.
+
+| Propiedad  | Tipo                  | Descripción                              |
+| :--------- | :-------------------- | :--------------------------------------- |
+| `httpOnly` | `boolean`             | Bloquea el acceso desde JS (Mitiga XSS). |
+| `secure`   | `boolean`             | Solo envía la cookie por HTTPS.          |
+| `sameSite` | `Strict` `Lax` `None` | Controla peticiones cross-site.          |
+| `maxAge`   | `number`              | Segundos de vida de la cookie.           |
+| `path`     | `string`              | Ruta donde la cookie es válida.          |
+
+### `JWTPayload`
+
+Estructura base para los datos dentro de un token. Incluye soporte para claims estándar y campos personalizados.
+
+```typescript
+type JWTPayload = {
+  iat?: number; // Issued At
+  exp?: number; // Expiration Time
+  [key: string]: any; // Campos personalizados
+};
+```
+
+## Ejemplo: Uso de Enums en Controladores
+
+Usar los `enums` nativos hace que tu código sea mucho más profesional y resistente a errores:
+
+```typescript
+import { httpStatus, methods, TokenExpiration } from "fang-js/types";
+
+app.get("/status", (ctx) => {
+  // En lugar de usar 200, usamos el Enum
+  return ctx.json({ status: "online" }, httpStatus.OK);
+});
+
+// En configuraciones
+const sessionTime = TokenExpiration.OneHour;
+```
+
+<Aside type="tip">
+  {" "}
+  Pro Tip: Siempre que veas una opción que acepte un string constante (como los
+  métodos HTTP o estados), verifica si existe un Enum en Fang para ello. Esto
+  facilitará futuras refactorizaciones.{" "}
+</Aside>
