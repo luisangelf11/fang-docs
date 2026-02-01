@@ -1,0 +1,104 @@
+---
+title: Validación con Zod
+description: Aprende cómo blindar tu API utilizando la integración nativa de Zod en Fang JS.
+---
+
+import { Aside, Steps, Card } from "@astrojs/starlight/components";
+
+Fang JS no reinventa la rueda; utiliza **Zod**, la librería de declaración y validación de esquemas más potente del ecosistema TypeScript. Lo mejor de todo es que no necesitas instalarlo por separado, ya viene integrado en el núcleo.
+
+## Importación
+
+Para mantener la consistencia y asegurar la compatibilidad de versiones, importa siempre `z` desde el entry point de Fang:
+
+```typescript
+import { z } from "fang-js/zod";
+```
+
+## Validación de Body
+
+El método ctx.body() es asíncrono y acepta un esquema de Zod como argumento. Si los datos que envía el cliente no coinciden con el esquema, Fang lanzará automáticamente un error de validación.
+
+```typescript
+import { z } from "fang-js/zod";
+
+const UserSchema = z.object({
+  username: z.string().min(3),
+  email: z.string().email(),
+  age: z.number().optional(),
+});
+
+app.post("/register", async (ctx) => {
+  // data está totalmente tipado según UserSchema
+  const data = await ctx.body(UserSchema);
+
+  return ctx.created({ message: `Usuario ${data.username} registrado` });
+});
+```
+
+## Validación de Query Strings y Headers
+
+No solo el cuerpo de la petición puede ser validado. Fang ofrece métodos específicos para asegurar que los parámetros de búsqueda y las cabeceras sean correctos.
+
+### Query Params
+
+Ideal para paginación o filtros de búsqueda.
+
+```typescript
+const PaginationSchema = z.object({
+  page: z.coerce.number().default(1),
+  limit: z.coerce.number().max(100).default(10),
+});
+
+app.get("/posts", (ctx) => {
+  const { page, limit } = ctx.getQuery(PaginationSchema);
+  // ... lógica de base de datos
+});
+```
+
+### Headers
+
+Útil para validar tokens de API personalizados o versiones de la aplicación.
+
+```typescript
+const HeaderSchema = z
+  .object({
+    "x-api-key": z.string().uuid(),
+  })
+  .passthrough(); // Permite que pasen otros headers además del validado
+
+app.get("/secure-data", (ctx) => {
+  const headers = ctx.getHeader(HeaderSchema);
+  // ...
+});
+```
+
+<Aside type="tip">
+  {" "}
+  Coerción de tipos: Nota que usamos z.coerce.number() en el ejemplo de Query
+  Params. Esto es vital porque los valores de la URL siempre llegan como
+  strings, y Zod se encarga de transformarlos a números por ti.{" "}
+</Aside>
+
+## Manejo de Errores de Validación
+
+Cuando una validación de Zod falla, Fang JS lanza una excepción interna. Puedes capturar estos errores de forma elegante en tu manejador global:
+
+```typescript
+app.onError((err, ctx) => {
+  if (err.message === "Invalid body schema") {
+    return ctx.badRequest({
+      error: "Validation Failed",
+      details: "Los datos enviados no cumplen con el formato requerido",
+    });
+  }
+  // ... otros errores
+});
+```
+
+<Card title="¿Por qué Zod?" icon="approve-check">
+  {" "}
+  Al usar fang-js/zod, obtienes validación en tiempo de ejecución y seguridad de
+  tipos en tiempo de compilación con una sola definición. Esto reduce
+  drásticamente los bugs en producción.{" "}
+</Card>

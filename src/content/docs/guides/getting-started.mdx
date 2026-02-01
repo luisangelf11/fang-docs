@@ -1,0 +1,93 @@
+---
+title: Getting Started
+description: Aprende a instalar y configurar tu primer servidor con Fang JS.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Fang JS está diseñado para ser productivo desde el primer segundo. Aunque puedes usarlo en proyectos vanilla de JavaScript, **recomendamos encarecidamente el uso de TypeScript** para aprovechar el IntelliSense avanzado y la validación de tipos en los decoradores y el contexto.
+
+## Instalación
+
+Instala el núcleo de Fang JS y su única dependencia de validación (Zod) mediante npm:
+
+<Tabs>
+  <TabItem label="npm">
+    ```bash
+    npm install fang-js
+    ```
+  </TabItem>
+  <TabItem label="pnpm">
+    ```bash
+    pnpm add fang-js
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```bash
+    yarn add fang-js
+    ```
+  </TabItem>
+</Tabs>
+
+## Tu primer servidor
+
+Aquí tienes cómo levantar una API funcional en cuestión de segundos.
+
+<Tabs>
+  <TabItem label="TypeScript (Recomendado)">
+    ```typescript
+    // index.ts
+    import { Fang } from 'fang-js';
+
+    const app = new Fang();
+
+    app.get("/", (ctx) => {
+      ctx.json({ message: "Fang JS ruge con TypeScript! 🐺" });
+    });
+
+    app.listen(3000, () => {
+      console.log("Server running on http://localhost:3000");
+    });
+    ```
+  </TabItem>
+  <TabItem label="JavaScript">
+    ```javascript
+    // index.js
+    import { Fang } from 'fang-js';
+
+    const app = new Fang();
+
+    app.get("/", (ctx) => {
+      ctx.json({ message: "Fang JS funcionando en JS puro! 🚀" });
+    });
+
+    app.listen(3000);
+    ```
+  </TabItem>
+</Tabs>
+
+<Aside type="tip">
+  En TypeScript, el objeto `ctx` (Contexto) viene totalmente tipado, lo que te permite ver todos los métodos disponibles (`json`, `body`, `params`, `state`) mientras escribes.
+</Aside>
+
+## Configuración recomendada
+
+Para proyectos que escalan, Fang JS brilla más cuando organizas tu código por capas. Una estructura ideal se vería así:
+
+<Steps>
+1. **Controladores:** Define tus rutas y lógica de entrada.
+2. **Servicios:** Maneja la lógica de negocio y base de datos (como Prisma).
+3. **Schemas:** Define tus validaciones de datos con Zod.
+</Steps>
+
+```text
+my-api/
+├── src/
+│   ├── module-name/
+│   │   ├── controller.ts
+│   │   ├── service.ts
+│   │   └── schema.ts
+│   └── index.ts     # Punto de entrada
+├── package.json
+└── tsconfig.json
+```

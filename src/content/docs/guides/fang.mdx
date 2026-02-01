@@ -1,0 +1,117 @@
+---
+title: La Clase Fang
+description: Referencia completa de los métodos públicos y configuración del motor de Fang JS.
+---
+
+import { Steps, Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+
+La clase `Fang` es la columna vertebral de tu aplicación. Es una capa ligera construida sobre el módulo nativo `http` de Node.js que gestiona el enrutamiento, los middlewares y el ciclo de vida de las peticiones.
+
+## Métodos de Enrutamiento (HTTP)
+
+Fang proporciona métodos intuitivos para registrar rutas. Cada método acepta una ruta y una secuencia de middlewares (incluyendo el controlador final).
+
+### `app.get()`, `post()`, `put()`, `patch()`, `delete()`
+
+Registra una ruta para un método HTTP específico.
+
+```typescript
+app.get("/users", (ctx) => ctx.ok(users));
+app.post("/users", async (ctx) => {
+  const data = await ctx.body(UserSchema);
+  // ... lógica
+});
+```
+
+## Gestión de Middlewares
+
+### `app.use(middleware)`
+
+Registra un middleware global. Estos middlewares se ejecutan en todas las peticiones que entren al servidor, antes de los middlewares específicos de cada ruta.
+
+```typescript
+app.use(async (ctx, next) => {
+  const start = Date.now();
+  await next(); // Pasa al siguiente middleware o ruta
+  console.log(`Tiempo de respuesta: ${Date.now() - start}ms`);
+});
+```
+
+## Organización y Modularización
+
+### `app.group(prefix, callback?)`
+
+Crea un grupo de rutas con un prefijo común. Es la herramienta principal para mantener tu código organizado y modular.
+
+1. prefix: El path base (ej: /api/v1).
+
+2. callback: (Opcional) Una función que recibe una instancia de RouteGroup.
+
+```typescript
+// Definición modular
+app.group("/api/v1", (group) => {
+  group.get("/profile", (ctx) => { ... });
+});
+
+// O usando una clase controlador con método estático (Recomendado)
+app.group("/api/v2", UserController.register);
+```
+
+## Configuración del Servidor
+
+### `app.setTimeout(ms)`
+
+Establece un tiempo de espera global para todas las peticiones. Si el servidor no responde en el tiempo indicado, Fang enviará automáticamente un error 504 Gateway Timeout.
+
+```typescript
+app.setTimeout(5000); // 5 segundos de timeout
+```
+
+### `app.onError(handler)`
+
+Define un manejador de errores global personalizado. Si no se define, Fang usará su manejador genérico que devuelve un error 500 o el estatus de una HttpException.
+
+```typescript
+app.onError((err, ctx) => {
+    console.error("Error capturado:", err.message);
+    ctx.json({
+    success: false,
+    error: err.name,
+    message: err.message
+    }, 500);
+});
+```
+
+### `app.listen(port?, callback?)`
+
+1. port: Puerto a escuchar (Por defecto: 3000).
+
+2. callback: Función que se ejecuta cuando el servidor está listo. Si no se provee, Fang muestra un log estilizado automáticamente.
+
+```typescript
+app.listen(8080, () => {
+  console.log("Cazando en el puerto 8080... 🐺");
+});
+```
+
+## Flujo de Ejecución Interna
+
+Para entender cómo Fang procesa tus peticiones, este es el orden jerárquico:
+
+<Steps>
+1. **Request Timeout**: Se inicia el contador de tiempo configurado.
+2. **Context Creation**: Se crea el objeto ctx unificando req y res.
+3. **Global Middlewares**: Se ejecutan todos los app.use().
+4. **Route Matching**: Se busca la ruta en el Router.
+5. **Route Middlewares**: Se ejecutan los middlewares específicos de la ruta encontrada.
+6. **Execution**: Se ejecuta la lógica final del endpoint.
+7. **Error Handling**: Si algo falla en cualquier punto, salta al onError.
+</Steps>
+
+<Aside type="caution" title="Importante">
+  {" "}
+  Fang JS utiliza el Onion Model. Siempre recuerda llamar a await next() en tus
+  middlewares si quieres que la ejecución continúe hacia la ruta o los
+  siguientes middlewares.{" "}
+</Aside>
+

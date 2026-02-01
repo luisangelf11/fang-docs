@@ -1,0 +1,109 @@
+---
+title: El Objeto Context (ctx)
+description: Referencia completa de propiedades y métodos del contexto en Fang JS.
+---
+
+import { Aside, Card, CardGrid } from "@astrojs/starlight/components";
+
+El objeto `ctx` es el corazón de cada petición. Unifica el `req` (entrada) y el `res` (salida) de Node.js en una sola interfaz fluida, potente y totalmente tipada.
+
+## Propiedades Core
+
+Estas propiedades te permiten acceder a la información básica de la petición de forma directa.
+
+| Propiedad    | Tipo                     | Descripción                                            |
+| :----------- | :----------------------- | :----------------------------------------------------- |
+| `ctx.req`    | `IncomingMessage`        | Instancia nativa de la petición de Node.js.            |
+| `ctx.res`    | `ServerResponse`         | Instancia nativa de la respuesta de Node.js.           |
+| `ctx.params` | `Record<string, string>` | Parámetros dinámicos de la ruta (ej: `:id`).           |
+| `ctx.query`  | `Record<string, string>` | Objeto con los Query Strings de la URL.                |
+| `ctx.state`  | `Record<string, any>`    | Espacio compartido para pasar datos entre middlewares. |
+
+---
+
+## Extracción y Validación (Zod Core)
+
+Fang JS integra **Zod** de forma nativa. Esto te permite validar y tipar tus datos de entrada en un solo paso.
+
+### `ctx.body<T>(schema?)`
+
+Parsea el cuerpo de la petición (JSON). Si proporcionas un schema, Fang validará los datos y lanzará una excepción si no coinciden.
+
+```typescript
+const userSchema = z.object({ name: z.string() });
+const data = await ctx.body(userSchema); // 'data' está tipado automáticamente
+```
+
+### `ctx.getQuery(schema) y ctx.getHeader(schema)`
+
+Valida los query params o los headers contra un schema. Si falla, lanza automáticamente una `BadRequestException`.
+
+```typescript
+const query = ctx.getQuery(
+  z.object({
+    page: z.coerce.number().default(1),
+  }),
+);
+```
+
+## Manejo de Cookies
+
+Fang JS incluye una gestión de cookies robusta y segura por defecto.
+
+| Método                            | Descripción                                                |
+| :-------------------------------- | :--------------------------------------------------------- |
+| `getCookies()`                    | Devuelve un objeto con todas las cookies recibidas..       |
+| `setCookie(name, value, options)` | Establece una cookie con opciones (HttpOnly, Secure, etc). |
+| `removeCookie(name, path)`        | Expira una cookie para eliminarla del cliente.             |
+
+<Aside type="tip">
+  {" "}
+  Por seguridad, setCookie activa HttpOnly y Secure por defecto. Si estableces
+  sameSite: &quot;None&quot;, Fang forzará automáticamente Secure: true.{" "}
+</Aside>
+
+## Métodos de Respuesta
+
+Olvídate de configurar estados manualmente. Usa los métodos semánticos para que tu código sea más legible.
+
+### Éxito (2xx)
+
+`ctx.ok(data)`: Envía un 200 OK.
+
+`ctx.created(data)`: Envía un 201 Created.
+
+ctx.noContent()`: Envía un 204 sin cuerpo.
+
+### Errores del Cliente (4xx)
+
+`ctx.badRequest(data)`: Envía un 400.
+
+`ctx.unauthorized(data)`: Envía un 401.
+
+`ctx.notFound(data)`: Envía un 404.
+
+### Errores del Servidor (5xx)
+
+`ctx.internalError(data)`: Envía un 500.
+
+`ctx.serviceUnavailable(data)`: Envía un 503.
+
+## Ejemplo
+
+```typescript
+app.post("/login", async (ctx) => {
+  // 1. Validar body
+  const { email, password } = await ctx.body(LoginSchema);
+
+  // 2. Lógica de negocio
+  const user = await AuthService.verify(email, password);
+
+  if (!user) {
+    return ctx.unauthorized({ error: "Credenciales inválidas" });
+  }
+
+  // 3. Guardar en cookies y responder
+  ctx.setCookie("session", user.token, { maxAge: 3600 });
+  ctx.ok({ message: "¡Bienvenido de nuevo!" });
+});
+```

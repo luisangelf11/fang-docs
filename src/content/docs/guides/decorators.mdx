@@ -1,0 +1,111 @@
+---
+title: Decoradores e Interfaces
+description: Domina la estructura de Controladores y Servicios usando tipos fuertes en Fang JS.
+---
+
+import { Aside, Card, CardGrid, Steps } from "@astrojs/starlight/components";
+
+Fang JS utiliza Decoradores e Interfaces para garantizar que tu código siga una arquitectura predecible. Su función principal es validar que tus clases tengan la estructura necesaria para integrarse con el motor de rutas y el sistema de contextos.
+
+<Aside type="caution" title="Configuración">
+  Asegúrate de tener `"experimentalDecorators": true` en tu `tsconfig.json`.
+</Aside>
+
+## `@Controller`
+
+El decorador `@Controller` valida que tu clase sea un controlador legítimo. Para que un controlador sea válido en Fang JS, **debe tener un método estático llamado `register`**.
+
+Este método es el encargado de recibir el `RouteGroup` y definir las rutas.
+
+```typescript
+import { Controller, type RouteGroup } from "fang-js";
+
+@Controller
+export class UserController {
+  static register(group: RouteGroup) {
+    group.get("/", (ctx) => ctx.ok("Lista de usuarios"));
+    group.post("/create", (ctx) => ctx.created("Usuario creado"));
+  }
+}
+```
+
+Al registrarse, Fang lanzará un log informativo indicando que el controlador ha sido vinculado correctamente.
+
+## `@Service`
+
+El decorador @Service asegura que tu lógica de negocio esté preparada para recibir el Contexto. En Fang JS, la regla de oro es: el primer argumento de cualquier método de servicio debe ser ctx: Context.
+
+```typescript
+import { Service, type Context } from "fang-js";
+
+@Service
+export class UserService {
+  async findAll(ctx: Context) {
+    // ctx está disponible para acceder a query, params, etc.
+    return { message: "Buscando datos..." };
+  }
+}
+```
+
+## `IBaseService`
+
+Si quieres llevar el desarrollo al siguiente nivel, utiliza la interfaz IBaseService. Esta interfaz "obliga" a tus métodos a seguir la firma correcta, dándote autocompletado inmediato mientras escribes.
+
+```typescript
+import { IBaseService, type Context } from "fang-js";
+
+// Tu editor te avisará si olvidas incluir 'ctx' como primer parámetro
+export class PostService implements IBaseService {
+  async getPosts(ctx: Context, limit: number) {
+    return [];
+  }
+}
+```
+
+<CardGrid>
+  {" "}
+  <Card title="Seguridad de Tipos" icon="shieldCheck">
+    {" "}
+    Evita errores comunes como olvidar pasar el contexto a las capas
+    inferiores.{" "}
+  </Card>{" "}
+  <Card title="IntelliSense" icon="rocket">
+    {" "}
+    Autocompletado instantáneo al implementar métodos en tus servicios.{" "}
+  </Card>{" "}
+  <Card title="Logs de Registro" icon="list-format">
+    {" "}
+    Seguimiento claro de qué controladores se han cargado durante el
+    arranque.{" "}
+  </Card>{" "}
+</CardGrid>
+
+## Ejemplo de arquitectura
+
+```typescript
+// 1. Definimos el Servicio con el contrato IBaseService
+import { Service, IBaseService, Context } from "fang-js";
+
+@Service
+export class AuthService implements IBaseService {
+  async login(ctx: Context) {
+    const body = await ctx.body();
+    return { token: "secret_wolf_token" };
+  }
+}
+
+// 2. Definimos el Controlador con el método static register
+import { Controller, RouteGroup } from "fang-js";
+
+@Controller
+export class AuthController {
+  static register(group: RouteGroup) {
+    const service = new AuthService();
+
+    group.post("/login", (ctx) => service.login(ctx));
+  }
+}
+
+// 3. Registro en la App
+app.group("/auth", AuthController.register);
+```

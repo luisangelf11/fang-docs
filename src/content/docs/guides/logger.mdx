@@ -1,0 +1,77 @@
+---
+title: Logger
+description: Utilidad de consola con colores ANSI para Fang JS.
+---
+
+import { Aside, Card, CardGrid } from "@astrojs/starlight/components";
+
+Fang JS incluye una clase `Logger` integrada para facilitar el rastreo de eventos, errores y advertencias en la terminal. Utiliza códigos de colores ANSI para que la información sea escaneable visualmente de un vistazo.
+
+## Uso Básico
+
+Puedes instanciar el logger en cualquier parte de tu aplicación, ya sea dentro de un controlador, un servicio o un middleware.
+
+```typescript
+import { Logger } from "fang-js";
+
+const logger = new Logger();
+
+logger.info("El servidor está listo para recibir peticiones");
+logger.warm("La conexión a la base de datos es lenta");
+logger.error("No se pudo procesar la transacción");
+```
+
+## Métodos Disponibles
+
+El Logger viene con métodos preconfigurados para los niveles de log más comunes:
+
+| Método       | Etiqueta | Color    | Uso sugerido                                              |
+| :----------- | :------- | :------- | :-------------------------------------------------------- |
+| `info(msg)`  | [INFO]   | Cian     | Eventos normales, inicio de procesos o registros.         |
+| `warm(msg)`  | [WARM]   | Amarillo | Alertas que no detienen el flujo pero requieren atención. |
+| `error(msg)` | [ERROR]  | Rojo     | Excepciones, fallos críticos o errores de validación.     |
+
+## Logs Personalizados
+
+Si necesitas registrar eventos específicos de un módulo (como base de datos o autenticación), puedes usar el método custom. Este te permite definir tu propia etiqueta y color utilizando el enum de colores de Fang.
+
+```typescript
+import { Logger } from "fang-js";
+import { colors } from "fang-js/types";
+
+const logger = new Logger();
+
+// Ejemplo: Log personalizado para una base de datos
+logger.custom("Nueva conexión establecida", "DATABASE", colors.green);
+
+// Ejemplo: Log para un evento de seguridad
+logger.custom("Intento de acceso fallido", "AUTH", colors.magenta);
+```
+
+## ¿Por qué usar el Logger de Fang?
+
+<CardGrid>
+  {" "}
+  <Card title="Cero Dependencias" icon="rocket">
+    {" "}
+    No necesitas instalar librerías pesadas como Winston o Pino para tener logs
+    legibles y profesionales.{" "}
+  </Card>{" "}
+  <Card title="Estandarización" icon="list-format">
+    {" "}
+    Fang utiliza este mismo Logger internamente para mostrar el registro de
+    controladores y el estado del servidor.{" "}
+  </Card>{" "}
+  <Card title="DX (Developer Experience)" icon="seti:typescript">
+    {" "}
+    Los colores ayudan a separar el ruido de la información crítica durante el
+    desarrollo intensivo.{" "}
+  </Card>{" "}
+</CardGrid>
+
+<Aside type="tip">
+  {" "}
+  ¿Sabías que...? Fang JS utiliza el Logger automáticamente cuando inicias la
+  app con app.listen(). Verás un mensaje estilizado que indica que el servidor
+  está "ready" y en qué puerto está escuchando.{" "}
+</Aside>

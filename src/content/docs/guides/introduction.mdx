@@ -1,0 +1,56 @@
+---
+title: Introducción
+description: Qué es Fang JS y por qué nació este micro-framework para Node.js.
+---
+
+import { Aside, Steps, Card, CardGrid } from '@astrojs/starlight/components';
+
+**Fang JS** es un micro-framework minimalista, ultraligero y fuertemente tipado diseñado para Node.js. Su filosofía se basa en eliminar dependencias externas innecesarias para centrarse en lo que realmente importa: el desarrollo de APIs REST de alto rendimiento.
+
+## ¿Por qué existe Fang JS?
+
+Fang JS nació de una idea radical: **¿Qué pasaría si un framework no intentara hacerlo todo, sino que hiciera una sola cosa a la perfección?**
+
+En un ecosistema saturado de abstracciones pesadas y "magia negra" que oculta el funcionamiento real de las peticiones, Fang JS se erige como una capa delgada, transparente y extremadamente rápida construida directamente sobre los módulos nativos de Node.js.
+
+<Aside type="caution" title="Filosofía de Poder Minimalista">
+No creemos en las "cajas negras". Si quieres una funcionalidad (Sesiones, JWT, etc.), tú la integras. Nosotros te damos las herramientas (Contexto, Cookies, Middlewares), tú pones la lógica.
+</Aside>
+
+## Pilares Fundamentales
+
+<CardGrid>
+  <Card title="Sin dependencias pesadas" icon="puzzle">
+    Solo **Zod** vive en tu `node_modules`. Esto garantiza máxima seguridad, un footprint mínimo y validaciones de grado industrial.
+  </Card>
+  <Card title="Tipado de Primer Nivel" icon="seti:typescript">
+    Escrito nativamente en TypeScript. El objeto `Context` unificado elimina la necesidad de manejar `req` y `res` por separado.
+  </Card>
+  <Card title="Arquitectura de Cebolla" icon="layers">
+    Soporte total para el patrón de middleware asíncrono (`await next()`), permitiendo ejecutar lógica antes y después de tus rutas.
+  </Card>
+  <Card title="Seguridad por Defecto" icon="shieldCheck">
+    Gestión de cookies con atributos de seguridad (HttpOnly, Secure, SameSite) tratados como ciudadanos de primera clase.
+  </Card>
+</CardGrid>
+
+## Fang JS frente a la industria
+
+A diferencia de otros frameworks que arrastran decenas de dependencias transitivas, Fang JS mantiene su árbol de dependencias limpio.
+
+| Característica | Express.js | Koa.js | **Fang JS** 🐺 |
+| :--- | :--- | :--- | :--- |
+| **Dependencias** | ~30+ | ~20+ | **1 (Zod)** |
+| **Validación** | Manual | Manual | **Nativa con Zod** |
+| **TypeScript** | Vía `@types` | Vía `@types` | **Nativo** |
+| **Peso** | Pesado | Moderado | **Ultra-ligero** |
+
+---
+
+## ¿Es para ti?
+
+Si eres un desarrollador que valora la **mantenibilidad**, la **seguridad real** y una **arquitectura limpia** sin sacrificar la velocidad de ejecución, Fang JS es tu herramienta. Es ideal para microservicios donde cada milisegundo de latencia y cada megabyte de memoria cuentan.
+
+<Aside>
+**¿Listo para probarlo?** Salta a la [Guía de Inicio Rápido](/guides/getting-started/) y levanta tu primer servidor en segundos.
+</Aside>
