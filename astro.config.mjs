@@ -26,6 +26,7 @@ export default defineConfig({
             { label: "Logger", slug: "guides/logger" },
             { label: "Middlewares", slug: "guides/middlewares" },
             { label: "Exceptions", slug: "guides/exceptions" },
+            { label: "Seguridad", slug: "guides/security" },
             { label: "Zod", slug: "guides/zod" },
           ],
         },

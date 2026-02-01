@@ -1,0 +1,126 @@
+---
+title: Seguridad
+description: Herramientas integradas para hashing de contraseñas, generación de secretos y manejo de JWT.
+---
+
+import { Aside, Card, CardGrid, Steps } from "@astrojs/starlight/components";
+
+Fang JS prioriza la seguridad sin depender de librerías externas pesadas. Utiliza el módulo nativo `crypto` de Node.js para ofrecer herramientas robustas de hashing, criptografía y autenticación por tokens.
+
+---
+
+## Hashing de Contraseñas
+
+Fang utiliza el algoritmo **scrypt**, un esquema de derivación de claves diseñado para ser resistente a ataques de fuerza bruta mediante hardware (GPU/ASIC).
+
+### `generateHash(password, saltLength?)`
+
+Genera un hash seguro. Por defecto usa un salt de 16 bytes.
+
+```typescript
+import { generateHash } from "fang-js/security";
+
+const hash = await generateHash("mi_password_seguro");
+// Resultado: scrypt$7a2...$b4e...
+```
+
+### `verifyHash(password, hash)`
+
+Verifica si una contraseña coincide con un hash almacenado. Utiliza timingSafeEqual para prevenir ataques de tiempo.
+
+```typescript
+import { verifyHash } from "fang-js/security";
+
+const isValid = await verifyHash("mi_password_seguro", user.storedHash);
+if (isValid) {
+  // Login exitoso
+}
+```
+
+## Generación de Secretos
+
+Para firmar tokens o cifrar datos, necesitas claves criptográficamente fuertes. Fang incluye createSecretKey para automatizar esto.
+
+### `createSecretKey(algorithm, length?)`
+
+Genera una clave en formato hexadecimal.
+
+1. **Algoritmos:** `hmac` o `aes`.
+
+2. **Validación:** Para `AES`, solo permite `128`, `192` o `256` bits. Para HMAC, exige un mínimo de `128` bits.
+
+```typescript
+import { createSecretKey } from "fang-js";
+
+const secret = await createSecretKey("hmac", 256);
+console.log(secret); // "a7f3..."
+```
+
+## JSON Web Tokens (JWT)
+
+Fang implementa el estándar `JWT` de forma nativa `(HS256)`. Esto permite autenticar peticiones de forma stateless.
+
+### `signJwt(payload, options)`
+
+Crea un token firmado con una fecha de expiración.
+
+```typescript
+import { signJwt } from "fang-js/security";
+import { TokenExpiration } from "fang-js/types";
+
+const token = signJwt(
+  { userId: "123", role: "admin" },
+  { secret: "tu_secreto", expiresIn: TokenExpiration.OneHour }, // 1 hora
+);
+```
+
+### `verifyJwt(token, secret)`
+
+Valida la integridad y la expiración de un token. Si es válido, devuelve el `payload` decodificado; si no, devuelve `null`.
+
+```typescript
+import { verifyJwt } from "fang-js/security";
+
+const payload = verifyJwt(token, "tu_secreto");
+
+if (payload) {
+  console.log("Usuario ID:", payload.userId);
+}
+```
+
+### Interfaces y Tipos
+
+Para facilitar el desarrollo con TypeScript, Fang exporta las siguientes interfaces:
+
+| Interfaz      | Descripción                                            |
+| :------------ | :----------------------------------------------------- |
+| `SignOptions` | Configuración para firmar tokens (secret, expiresIn).  |
+| `JWTPayload`  | Estructura base para los datos contenidos en el token. |
+
+## ¿Por qué el enfoque Zero-Deps?
+
+<CardGrid>
+  {" "}
+  <Card title="Rendimiento Nativo" icon="rocket">
+    {" "}
+    Al usar el módulo crypto de Node.js, aprovechamos las optimizaciones de bajo
+    nivel del motor V8.{" "}
+  </Card>{" "}
+  <Card title="Seguridad de Tiempo Constante" icon="shield">
+    {" "}
+    Usamos timingSafeEqual en todas las comparaciones críticas para evitar
+    ataques de canal lateral.{" "}
+  </Card>{" "}
+  <Card title="Sin Vulnerabilidades de Terceros" icon="lock">
+    {" "}
+    Menos dependencias significan menos riesgo de ataques a la cadena de
+    suministro (supply chain attacks).{" "}
+  </Card>{" "}
+</CardGrid>
+
+<Aside type="tip">
+  {" "}
+  Buenas prácticas: Nunca guardes tus secretos directamente en el código.
+  Utiliza variables de entorno y genéralos usando createSecretKey durante la
+  fase de configuración de tu servidor.{" "}
+</Aside>
