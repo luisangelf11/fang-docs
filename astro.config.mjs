@@ -34,6 +34,12 @@ export default defineConfig({
           label: "Referencia",
           autogenerate: { directory: "reference" },
         },
+        {
+          label: "Comunidad",
+          items: [
+            {label: "Sobre el creador", slug: "community/creator"},
+          ],
+        },
       ],
     }),
   ],

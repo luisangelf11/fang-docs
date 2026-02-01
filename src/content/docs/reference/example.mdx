@@ -1,0 +1,254 @@
+---
+title: "API Rest: Fang JS + Prisma"
+description: Un ejemplo práctico de nivel producción utilizando Fang JS, Prisma ORM y autenticación JWT.
+---
+
+import { Aside, Steps, Card } from "@astrojs/starlight/components";
+
+# Ejemplo de API de Alto Rendimiento
+
+¿Quieres ver de lo que es capaz **Fang JS** cuando se ensucia las manos? En este ejemplo, construiremos una API profesional de gestión de tareas que implementa todo el stack de seguridad y persistencia:
+
+- **Persistencia**: Prisma ORM sobre una base de datos PostgreSQL/SQLite.
+- **Seguridad**: Autenticación nativa con el middleware de JWT de Fang.
+- **Validación**: Esquemas de Zod importados desde `fang-js/zod`.
+- **Arquitectura**: Separación clara entre Controladores y Servicios.
+
+<Aside type="caution" title="Recomendación de DX">
+  El siguiente ejemplo está escrito en **JavaScript** para demostrar la
+  simplicidad del motor. Sin embargo, para una experiencia de desarrollo (DX)
+  superior, **recomendamos encarecidamente usar TypeScript**. Como hemos visto
+  en las páginas anteriores, Fang JS brilla con TS gracias al autocompletado de
+  los Enums, el tipado del Contexto y el soporte de la interfaz `IBaseService`.
+  **No seas flojo, usa TS :3**
+</Aside>
+
+## Requisitos Previos
+
+Antes de empezar, asegúrate de tener instalado Prisma en tu proyecto:
+
+```bash
+npm install prisma --save-dev
+npx prisma init
+```
+
+## Implementación
+
+A continuación, se muestra la implementación de la API. Observa cómo el Context fluye a través de los servicios y cómo el middleware de auth protege las rutas sensibles de forma limpia.
+
+### Arquitectura del proyecto
+
+```text
+my-api/
+├── src/
+│   ├── user/
+│   │   ├── user-controller.js
+│   │   ├── user-service.js
+│   │   └── schema.js
+│   ├── lib/
+│   │   └── prisma.js
+│   └── index.js
+├── package.json
+└── .env
+```
+
+### Archivo principal (index.js)
+
+```javascript
+import { Fang } from "fang-js";
+import { BadRequestException, UnauthorizedException } from "fang-js/exceptions";
+import { UserController } from "./user/user-controller.js";
+import { cors, serveStatic } from "fang-js/middlewares";
+import { methods } from "fang-js/types";
+
+const app = new Fang();
+
+//Cors
+app.use(
+  cors({
+    origin: "http://127.0.0.1:5500",
+    methods: [methods.GET, methods.POST, methods.PUT, methods.DELETE],
+  }),
+);
+
+//Static files
+app.use(serveStatic("public", "/static"));
+
+//Main route
+app.get("/", (ctx) => {
+  ctx.json({ message: "Hello World!" });
+});
+
+//User Group route
+app.group("/api/user", UserController.register);
+
+app.onError((err, ctx) => {
+  if (err instanceof UnauthorizedException)
+    return ctx.unauthorized({
+      success: false,
+      message: err.message,
+      data: null,
+    });
+
+  if (err instanceof BadRequestException)
+    return ctx.badRequest({ success: false, message: err.message, data: null });
+
+  return ctx.internalError({
+    success: false,
+    message: err.message,
+    data: null,
+  });
+});
+
+app.listen();
+```
+
+### Controlador de Usuarios
+
+```javascript
+import { auth } from "fang-js/middlewares";
+import { UserService } from "./user-service.js";
+
+export class UserController {
+  static register(group) {
+    const service = new UserService();
+    const secret = process.env.JWT_SECRET;
+
+    // Public routes
+    group.get("/", (ctx) => service.getAll(ctx));
+    group.get("/getById/:id", (ctx) => service.getById(ctx));
+    group.post("/register", (ctx) => service.registerUser(ctx));
+    group.post("/auth", (ctx) => service.login(ctx));
+    group.delete("/:id", (ctx) => service.deleteUser(ctx));
+
+    // Protected routes
+    group.get("/profile", auth(secret), (ctx) => service.getProfile(ctx));
+    group.put("/update", auth(secret), (ctx) => service.update(ctx));
+  }
+}
+```
+
+### Servicios de Usuarios
+
+```javascript
+import { generateHash, signJwt, verifyHash } from "fang-js/security";
+import { prisma } from "../lib/prisma.js";
+import { authSchema, userCreateSchema, updateSchema } from "./user.schema.js";
+import { TokenExpiration } from "fang-js/types";
+
+export class UserService {
+  async getAll(ctx) {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    ctx.json({ users });
+  }
+
+  async getById(ctx) {
+    const { id } = ctx.params;
+    const user = await prisma.user.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!user) return ctx.json({ error: "User not found" }, 404);
+    ctx.json({ user });
+  }
+
+  async registerUser(ctx) {
+    const { name, email, password } = await ctx.body(userCreateSchema);
+    const userExists = await prisma.user.findUnique({ where: { email } });
+
+    if (userExists) return ctx.json({ error: "User already exists" }, 400);
+
+    const hash = await generateHash(password);
+    const newUser = await prisma.user.create({
+      data: { name, email, password: hash },
+    });
+    ctx.json({ user: newUser });
+  }
+
+  async login(ctx) {
+    const { email, password } = await ctx.body(authSchema);
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) return ctx.unauthorized({ error: "Invalid credentials" });
+
+    const match = await verifyHash(password, user.password);
+    if (!match) return ctx.unauthorized({ error: "Invalid credentials" });
+
+    const jwt = await signJwt(
+      { id: user.id, email: user.email },
+      { expiresIn: TokenExpiration.OneHour, secret: process.env.JWT_SECRET },
+    );
+    ctx.json({ success: "Welcome!", token: jwt });
+  }
+
+  async getProfile(ctx) {
+    const user = await prisma.user.findFirst({
+      where: { id: Number(ctx.state.user.id) },
+    });
+    ctx.json({ user });
+  }
+
+  async update(ctx) {
+    const { name, password } = await ctx.body(updateSchema);
+    const id = Number(ctx.state.user.id);
+
+    const hash = await generateHash(password);
+    await prisma.user.update({
+      where: { id },
+      data: { name, password: hash },
+    });
+    ctx.json({ message: "User updated" });
+  }
+
+  async deleteUser(ctx) {
+    const { id } = ctx.params;
+    try {
+      await prisma.user.delete({ where: { id: Number(id) } });
+      ctx.json({ message: "User deleted" });
+    } catch (e) {
+      ctx.json({ error: "User not found" }, 404);
+    }
+  }
+}
+```
+
+### Configuración de Prisma
+
+```javascript
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaClient } from "@prisma/client";
+
+const connectionString = `${process.env.DATABASE_URL}`;
+
+const adapter = new PrismaBetterSqlite3({ url: connectionString });
+const prisma = new PrismaClient({ adapter });
+
+export { prisma };
+```
+
+## Puntos Clave del Ejemplo
+
+<Card title="Cero Fricción" icon="rocket">
+  {" "}
+  Nota cómo el middleware de auth inyecta automáticamente al usuario en
+  ctx.state.user, disponible para cualquier ruta posterior.{" "}
+</Card>
+
+<Card title="Seguridad de Hashing" icon="shieldCheck">
+  {" "}
+  Las contraseñas no se guardan en texto plano; usamos generateHash de Fang para
+  aplicar scrypt antes de persistir en Prisma.{" "}
+</Card>
+
+<Card title="Respuestas Semánticas" icon="approve-check">
+  {" "}
+  En lugar de configurar cabeceras manualmente, podríamos usar también ctx.ok(), ctx.created() y
+  las excepciones como NotFoundException.{" "}
+</Card>
