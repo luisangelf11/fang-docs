@@ -12,7 +12,7 @@ Fang JS no reinventa la rueda; utiliza **Zod**, la librería de declaración y v
 Para mantener la consistencia y asegurar la compatibilidad de versiones, importa siempre `z` desde el entry point de Fang:
 
 ```typescript
-import { z } from "fang-js/zod";
+import { z } from "@fang-js/fang/zod";
 ```
 
 ## Validación de Body
@@ -20,7 +20,7 @@ import { z } from "fang-js/zod";
 El método ctx.body() es asíncrono y acepta un esquema de Zod como argumento. Si los datos que envía el cliente no coinciden con el esquema, Fang lanzará automáticamente un error de validación.
 
 ```typescript
-import { z } from "fang-js/zod";
+import { z } from "@fang-js/fang/zod";
 
 const UserSchema = z.object({
   username: z.string().min(3),
@@ -98,7 +98,7 @@ app.onError((err, ctx) => {
 
 <Card title="¿Por qué Zod?" icon="approve-check">
   {" "}
-  Al usar fang-js/zod, obtienes validación en tiempo de ejecución y seguridad de
+  Al usar @fang-js/fang/zod, obtienes validación en tiempo de ejecución y seguridad de
   tipos en tiempo de compilación con una sola definición. Esto reduce
   drásticamente los bugs en producción.{" "}
 </Card>

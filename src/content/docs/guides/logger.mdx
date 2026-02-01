@@ -12,7 +12,7 @@ Fang JS incluye una clase `Logger` integrada para facilitar el rastreo de evento
 Puedes instanciar el logger en cualquier parte de tu aplicación, ya sea dentro de un controlador, un servicio o un middleware.
 
 ```typescript
-import { Logger } from "fang-js";
+import { Logger } from "@fang-js/fang";
 
 const logger = new Logger();
 
@@ -36,8 +36,8 @@ El Logger viene con métodos preconfigurados para los niveles de log más comune
 Si necesitas registrar eventos específicos de un módulo (como base de datos o autenticación), puedes usar el método custom. Este te permite definir tu propia etiqueta y color utilizando el enum de colores de Fang.
 
 ```typescript
-import { Logger } from "fang-js";
-import { colors } from "fang-js/types";
+import { Logger } from "@fang-js/fang";
+import { colors } from "@fang-js/fang/types";
 
 const logger = new Logger();
 

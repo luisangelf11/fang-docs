@@ -18,7 +18,7 @@ El decorador `@Controller` valida que tu clase sea un controlador legítimo. Par
 Este método es el encargado de recibir el `RouteGroup` y definir las rutas.
 
 ```typescript
-import { Controller, type RouteGroup } from "fang-js";
+import { Controller, type RouteGroup } from "@fang-js/fang";
 
 @Controller
 export class UserController {
@@ -33,10 +33,10 @@ Al registrarse, Fang lanzará un log informativo indicando que el controlador ha
 
 ## `@Service`
 
-El decorador @Service asegura que tu lógica de negocio esté preparada para recibir el Contexto. En Fang JS, la regla de oro es: el primer argumento de cualquier método de servicio debe ser ctx: Context.
+El decorador @Service asegura que tu lógica de negocio esté preparada para recibir el Contexto. En Fang JS, la regla de oro es: el primer argumento de cualquier método de servicio debe ser ctx: Context. Este decorador se auxilia de la implementación de la clase `BaseService`
 
 ```typescript
-import { Service, type Context } from "fang-js";
+import { Service, Context } from "@fang-js/fang";
 
 @Service
 export class UserService {
@@ -47,15 +47,15 @@ export class UserService {
 }
 ```
 
-## `IBaseService`
+## `BaseService`
 
-Si quieres llevar el desarrollo al siguiente nivel, utiliza la interfaz IBaseService. Esta interfaz "obliga" a tus métodos a seguir la firma correcta, dándote autocompletado inmediato mientras escribes.
+Si quieres llevar el desarrollo al siguiente nivel, utiliza la clase `BaseService`. Esta clase abstracta "obliga" a tus métodos a seguir la firma correcta, dándote autocompletado inmediato mientras escribes.
 
 ```typescript
-import { IBaseService, type Context } from "fang-js";
+import { BaseService, Context } from "@fang-js/fang";
 
 // Tu editor te avisará si olvidas incluir 'ctx' como primer parámetro
-export class PostService implements IBaseService {
+export class PostService implements BaseService {
   async getPosts(ctx: Context, limit: number) {
     return [];
   }
@@ -84,10 +84,10 @@ export class PostService implements IBaseService {
 
 ```typescript
 // 1. Definimos el Servicio con el contrato IBaseService
-import { Service, IBaseService, Context } from "fang-js";
+import { Service, BaseService, Context } from "@fang-js/fang";
 
 @Service
-export class AuthService implements IBaseService {
+export class AuthService implements BaseService {
   async login(ctx: Context) {
     const body = await ctx.body();
     return { token: "secret_wolf_token" };
@@ -95,7 +95,7 @@ export class AuthService implements IBaseService {
 }
 
 // 2. Definimos el Controlador con el método static register
-import { Controller, RouteGroup } from "fang-js";
+import { Controller, RouteGroup } from "@fang-js/fang";
 
 @Controller
 export class AuthController {

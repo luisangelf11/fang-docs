@@ -108,7 +108,7 @@ type JWTPayload = {
 Usar los `enums` nativos hace que tu código sea mucho más profesional y resistente a errores:
 
 ```typescript
-import { httpStatus, methods, TokenExpiration } from "fang-js/types";
+import { httpStatus, methods, TokenExpiration } from "@fang-js/fang/types";
 
 app.get("/status", (ctx) => {
   // En lugar de usar 200, usamos el Enum

@@ -18,7 +18,7 @@ Fang utiliza el algoritmo **scrypt**, un esquema de derivación de claves diseñ
 Genera un hash seguro. Por defecto usa un salt de 16 bytes.
 
 ```typescript
-import { generateHash } from "fang-js/security";
+import { generateHash } from "@fang-js/fang/security";
 
 const hash = await generateHash("mi_password_seguro");
 // Resultado: scrypt$7a2...$b4e...
@@ -29,7 +29,7 @@ const hash = await generateHash("mi_password_seguro");
 Verifica si una contraseña coincide con un hash almacenado. Utiliza timingSafeEqual para prevenir ataques de tiempo.
 
 ```typescript
-import { verifyHash } from "fang-js/security";
+import { verifyHash } from "@fang-js/fang/security";
 
 const isValid = await verifyHash("mi_password_seguro", user.storedHash);
 if (isValid) {
@@ -50,7 +50,7 @@ Genera una clave en formato hexadecimal.
 2. **Validación:** Para `AES`, solo permite `128`, `192` o `256` bits. Para HMAC, exige un mínimo de `128` bits.
 
 ```typescript
-import { createSecretKey } from "fang-js";
+import { createSecretKey } from "@fang-js/fang";
 
 const secret = await createSecretKey("hmac", 256);
 console.log(secret); // "a7f3..."
@@ -65,8 +65,8 @@ Fang implementa el estándar `JWT` de forma nativa `(HS256)`. Esto permite auten
 Crea un token firmado con una fecha de expiración.
 
 ```typescript
-import { signJwt } from "fang-js/security";
-import { TokenExpiration } from "fang-js/types";
+import { signJwt } from "@fang-js/fang/security";
+import { TokenExpiration } from "@fang-js/fang/types";
 
 const token = signJwt(
   { userId: "123", role: "admin" },
@@ -79,7 +79,7 @@ const token = signJwt(
 Valida la integridad y la expiración de un token. Si es válido, devuelve el `payload` decodificado; si no, devuelve `null`.
 
 ```typescript
-import { verifyJwt } from "fang-js/security";
+import { verifyJwt } from "@fang-js/fang/security";
 
 const payload = verifyJwt(token, "tu_secreto");
 

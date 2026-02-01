@@ -14,8 +14,8 @@ Los middlewares en **Fang JS** siguen el **Onion Model** (Modelo de Cebolla). Es
 El middleware de `cors` gestiona las cabeceras de seguridad para permitir peticiones desde otros dominios y maneja automáticamente las peticiones `OPTIONS` (pre-flight).
 
 ```typescript
-import { cors } from "fang-js/middlewares";
-import { methods } from "fang-js/types";
+import { cors } from "@fang-js/fang/middlewares";
+import { methods } from "@fang-js/fang/types";
 
 app.use(
   cors({
@@ -37,7 +37,7 @@ app.use(
 Este middleware valida la presencia y la firma de un JSON Web Token en la cabecera `Authorization: Bearer <token>`. Si el token es válido, inyecta los datos del usuario en `ctx.state.user`.
 
 ```typescript
-import { auth } from "fang-js/middlewares";
+import { auth } from "@fang-js/fang/middlewares";
 
 // Aplicar a un grupo de rutas protegidas
 const admin = app.group("/admin");
@@ -60,7 +60,7 @@ admin.get("/dashboard", (ctx) => {
 Sirve archivos (imágenes, CSS, JS, etc.) desde un directorio local. Incluye un `MIME_MAP` interno muy completo y manejo de caché por defecto (1 día).
 
 ```typescript
-import { serveStatic } from "fang-js";
+import { serveStatic } from "@fang-js/fang";
 
 app.use(
   serveStatic("public", "/static", (ctx) => {
@@ -80,7 +80,7 @@ app.use(
 Puedes crear tus propios middlewares fácilmente. Solo recuerda usar await next() para no romper la cadena.
 
 ```typescript
-import type { Middleware } from "fang-js/types";
+import type { Middleware } from "@fang-js/fang/types";
 
 export const loggerMiddleware: Middleware = async (ctx, next) => {
   const start = Date.now();

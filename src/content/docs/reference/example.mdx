@@ -11,7 +11,7 @@ import { Aside, Steps, Card } from "@astrojs/starlight/components";
 
 - **Persistencia**: Prisma ORM sobre una base de datos PostgreSQL/SQLite.
 - **Seguridad**: Autenticación nativa con el middleware de JWT de Fang.
-- **Validación**: Esquemas de Zod importados desde `fang-js/zod`.
+- **Validación**: Esquemas de Zod importados desde `@fang-js/fang/zod`.
 - **Arquitectura**: Separación clara entre Controladores y Servicios.
 
 <Aside type="caution" title="Recomendación de DX">
@@ -55,11 +55,11 @@ my-api/
 ### Archivo principal (index.js)
 
 ```javascript
-import { Fang } from "fang-js";
-import { BadRequestException, UnauthorizedException } from "fang-js/exceptions";
+import { Fang } from "@fang-js/fang";
+import { BadRequestException, UnauthorizedException } from "@fang-js/fang/exceptions";
 import { UserController } from "./user/user-controller.js";
-import { cors, serveStatic } from "fang-js/middlewares";
-import { methods } from "fang-js/types";
+import { cors, serveStatic } from "@fang-js/fang/middlewares";
+import { methods } from "@fang-js/fang/types";
 
 const app = new Fang();
 
@@ -106,7 +106,7 @@ app.listen();
 ### Controlador de Usuarios
 
 ```javascript
-import { auth } from "fang-js/middlewares";
+import { auth } from "@fang-js/fang/middlewares";
 import { UserService } from "./user-service.js";
 
 export class UserController {
@@ -131,10 +131,10 @@ export class UserController {
 ### Servicios de Usuarios
 
 ```javascript
-import { generateHash, signJwt, verifyHash } from "fang-js/security";
+import { generateHash, signJwt, verifyHash } from "@fang-js/fang/security";
 import { prisma } from "../lib/prisma.js";
 import { authSchema, userCreateSchema, updateSchema } from "./user.schema.js";
-import { TokenExpiration } from "fang-js/types";
+import { TokenExpiration } from "@fang-js/fang/types";
 
 export class UserService {
   async getAll(ctx) {

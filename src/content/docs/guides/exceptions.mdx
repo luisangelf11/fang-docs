@@ -12,7 +12,7 @@ En **Fang JS**, no necesitas enviar respuestas de error manualmente dentro de un
 Todas las excepciones de Fang heredan de `HttpException`. Esta clase extiende el objeto `Error` nativo de JavaScript, pero añade soporte para códigos de estado HTTP y captura de traza (_stack trace_).
 
 ```typescript
-import { HttpException } from "fang-js/exceptions";
+import { HttpException } from "@fang-js/fang/exceptions";
 
 // Puedes lanzar una excepción genérica
 throw new HttpException("Mensaje personalizado", 418);
@@ -69,7 +69,7 @@ export class UserService {
 Si tu lógica de negocio requiere errores específicos (como un error de pago o de cuota excedida), puedes extender la clase base fácilmente:
 
 ```typescript
-import { HttpException } from "fang-js/exceptions";
+import { HttpException } from "@fang-js/fang/exceptions";
 
 export class PaymentRequiredException extends HttpException {
   constructor(message = "Suscripción inactiva") {
