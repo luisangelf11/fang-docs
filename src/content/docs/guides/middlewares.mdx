@@ -1,0 +1,105 @@
+---
+title: Middlewares Nativos
+description: Aprende a usar los middlewares de seguridad, autenticación y archivos estáticos de Fang JS.
+---
+
+import { Aside, Card, CardGrid, Steps } from "@astrojs/starlight/components";
+
+Los middlewares en **Fang JS** siguen el **Onion Model** (Modelo de Cebolla). Esto permite ejecutar lógica antes de llegar a la ruta y después de que esta termine. Fang incluye tres middlewares fundamentales listos para usar.
+
+---
+
+## CORS (Cross-Origin Resource Sharing)
+
+El middleware de `cors` gestiona las cabeceras de seguridad para permitir peticiones desde otros dominios y maneja automáticamente las peticiones `OPTIONS` (pre-flight).
+
+```typescript
+import { cors } from "fang-js/middlewares";
+import { methods } from "fang-js/types";
+
+app.use(
+  cors({
+    origin: "http://127.0.0.1:5500",
+    methods: [methods.GET, methods.POST, methods.PUT, methods.DELETE],
+  }),
+);
+```
+
+| Opción           | Descripción                                       |
+| :--------------- | :------------------------------------------------ |
+| `origin`         | String, Array o "\*" para permitir dominios.      |
+| `methods`        | Métodos HTTP permitidos (Default: todos).         |
+| `allowedHeaders` | Cabeceras personalizadas permitidas.              |
+| `credentials`    | Habilita el envío de cookies y cabeceras de auth. |
+
+## Auth (JWT Authentication)
+
+Este middleware valida la presencia y la firma de un JSON Web Token en la cabecera `Authorization: Bearer <token>`. Si el token es válido, inyecta los datos del usuario en `ctx.state.user`.
+
+```typescript
+import { auth } from "fang-js/middlewares";
+
+// Aplicar a un grupo de rutas protegidas
+const admin = app.group("/admin");
+admin.use(auth(process.env.JWT_SECRET));
+
+admin.get("/dashboard", (ctx) => {
+  const user = ctx.state.user; // Datos decodificados del JWT
+  return ctx.ok({ welcome: user.username });
+});
+```
+
+<Aside type="danger" title="Seguridad">
+  {" "}
+  Si el token falta o es inválido, el middleware lanza automáticamente una
+  UnauthorizedException (401), deteniendo la ejecución.{" "}
+</Aside>
+
+## Serve Static (Archivos Estáticos)
+
+Sirve archivos (imágenes, CSS, JS, etc.) desde un directorio local. Incluye un `MIME_MAP` interno muy completo y manejo de caché por defecto (1 día).
+
+```typescript
+import { serveStatic } from "fang-js";
+
+app.use(
+  serveStatic("public", "/static", (ctx) => {
+    ctx.notFound({ error: "Archivo no encontrado" });
+  }),
+);
+```
+
+1. **rootDir:** Carpeta local (ej: "public").
+
+2. **prefix:** Prefijo en la URL para interceptar (ej: "/static").
+
+3. **onError:** Callback personalizado si el archivo no existe o hay un error de acceso.
+
+## Middlewares Personalizados
+
+Puedes crear tus propios middlewares fácilmente. Solo recuerda usar await next() para no romper la cadena.
+
+```typescript
+import type { Middleware } from "fang-js/types";
+
+export const loggerMiddleware: Middleware = async (ctx, next) => {
+  const start = Date.now();
+  await next();
+  console.log(`${ctx.req.method} - ${Date.now() - start}ms`);
+};
+```
+
+### ¿Cómo registrarlos?
+
+<Steps>
+  1. **Globales:** app.use(myMiddleware) (Afecta a toda la app). 
+  2. **Por Grupo:** group.use(myMiddleware) (Afecta a las rutas del grupo). 
+  3. **Por Ruta:** app.get(&quot;/ruta&quot;, myMiddleware, (ctx) =&gt; ...) (Solo esa ruta).
+</Steps>
+
+<Aside type="tip">
+  {" "}
+  Gracias a que Fang JS es zero-deps, el middleware serveStatic es
+  extremadamente ligero y utiliza createReadStream de Node.js para un manejo de
+  memoria eficiente al servir archivos grandes.{" "}
+</Aside>

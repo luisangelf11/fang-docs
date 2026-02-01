@@ -24,6 +24,8 @@ export default defineConfig({
             { label: "Context", slug: "guides/context" },
             { label: "Decorators", slug: "guides/decorators" },
             { label: "Logger", slug: "guides/logger" },
+            { label: "Middlewares", slug: "guides/middlewares" },
+            { label: "Exceptions", slug: "guides/exceptions" },
             { label: "Zod", slug: "guides/zod" },
           ],
         },

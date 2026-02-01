@@ -1,0 +1,109 @@
+---
+title: Manejo de Excepciones
+description: Aprende a gestionar errores de forma elegante con las excepciones integradas de Fang JS.
+---
+
+import { Aside, Card, CardGrid } from "@astrojs/starlight/components";
+
+En **Fang JS**, no necesitas enviar respuestas de error manualmente dentro de un `try/catch` en cada ruta. El framework proporciona un sistema de excepciones que, al ser lanzadas, son capturadas automáticamente por el motor de Fang para enviar la respuesta HTTP adecuada.
+
+## La Clase `HttpException`
+
+Todas las excepciones de Fang heredan de `HttpException`. Esta clase extiende el objeto `Error` nativo de JavaScript, pero añade soporte para códigos de estado HTTP y captura de traza (_stack trace_).
+
+```typescript
+import { HttpException } from "fang-js/exceptions";
+
+// Puedes lanzar una excepción genérica
+throw new HttpException("Mensaje personalizado", 418);
+```
+
+## Excepciones Integradas
+
+Fang incluye las excepciones más comunes para que tu código sea más semántico y legible:
+
+<CardGrid>
+  {" "}
+  <Card title="400: BadRequest" icon="warning">
+    {" "}
+    BadRequestException{" "}
+  </Card>{" "}
+  <Card title="401: Unauthorized" icon="lock">
+    {" "}
+    UnauthorizedException{" "}
+  </Card>{" "}
+  <Card title="403: Forbidden" icon="error">
+    {" "}
+    ForbiddenException{" "}
+  </Card>{" "}
+  <Card title="404: NotFound" icon="magnifier">
+    {" "}
+    NotFoundException{" "}
+  </Card>{" "}
+  <Card title="500: InternalError" icon="setting">
+    {" "}
+    InternalServerErrorException{" "}
+  </Card>{" "}
+</CardGrid>
+
+### Ejemplo de Uso en un Servicio
+
+```typescript
+@Service
+export class UserService {
+  async findById(ctx: Context, id: string) {
+    const user = await db.users.find(id);
+
+    if (!user) {
+      // Fang capturará esto y enviará un 404 JSON automáticamente
+      throw new NotFoundException(`El usuario con ID ${id} no existe`);
+    }
+
+    return user;
+  }
+}
+```
+
+## Crear Excepciones Personalizadas
+
+Si tu lógica de negocio requiere errores específicos (como un error de pago o de cuota excedida), puedes extender la clase base fácilmente:
+
+```typescript
+import { HttpException } from "fang-js/exceptions";
+
+export class PaymentRequiredException extends HttpException {
+  constructor(message = "Suscripción inactiva") {
+    super(message, 402);
+  }
+}
+
+// Uso
+if (!hasPaid) throw new PaymentRequiredException();
+```
+
+## Captura Global `(onError)`
+
+Recuerda que puedes personalizar cómo se ven estas excepciones cuando llegan al cliente configurando el método `onError` en tu instancia principal de `Fang`. Por defecto, Fang responde con un objeto `JSON` que contiene el nombre del error, el mensaje y el estatus.
+
+```typescript
+app.onError((err, ctx) => {
+  const status = err instanceof HttpException ? err.status : 500;
+
+  ctx.json(
+    {
+      success: false,
+      error: err.name,
+      message: err.message,
+    },
+    status,
+  );
+});
+```
+
+<Aside type="tip">
+  {" "}
+  Utilizar excepciones en lugar de retornar objetos de error permite que tu
+  lógica de negocio sea mucho más limpia, ya que puedes "interrumpir" la
+  ejecución en cualquier punto profundo de tus servicios y Fang se encargará de
+  informar al cliente.{" "}
+</Aside>
