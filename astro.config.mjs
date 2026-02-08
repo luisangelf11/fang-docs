@@ -28,6 +28,7 @@ export default defineConfig({
             { label: "Exceptions", slug: "guides/exceptions" },
             { label: "Seguridad", slug: "guides/security" },
             { label: "Zod", slug: "guides/zod" },
+            { label: "Constantes", slug: "guides/constants" },
           ],
         },
         {

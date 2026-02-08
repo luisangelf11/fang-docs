@@ -1,0 +1,65 @@
+---
+title: Constantes de Entorno e Infraestructura
+description: Referencia de constantes predefinidas para entornos de ejecución y puertos de bases de datos.
+---
+
+import { Aside, Card } from "@astrojs/starlight/components";
+
+Fang JS proporciona un conjunto de constantes exportadas para estandarizar la configuración de tus servicios y la conexión con infraestructuras externas.
+
+## Entornos de Ejecución
+
+Utiliza estas constantes para gestionar la lógica de tu aplicación según el entorno donde se esté ejecutando, evitando el uso de "magic strings".
+
+| Constante | Valor           | Descripción                                    |
+| :-------- | :-------------- | :--------------------------------------------- |
+| `TEST`    | `TESTING`       | Entorno de pruebas generales.                  |
+| `DEV`     | `DEVELOPMENT`   | Entorno de desarrollo.                         |
+| `PROD`    | `PRODUCTION`    | Entorno de producción en vivo.                 |
+| `LOCAL`   | `LOCAL`         | Entorno local del desarrollador.               |
+| `PREPROD` | `PREPRODUCTION` | Entorno previo a producción para validaciones. |
+| `STAGING` | `STAGING`       | Entorno de staging para pruebas finales.       |
+
+```typescript
+import { PROD, DEV } from "@fang-js/fang/constants";
+
+if (process.env.NODE_ENV === PROD) {
+  // Configuración para producción
+}
+```
+
+## Puertos de Infraestructura
+
+Fang JS incluye los puertos predeterminados de las bases de datos y brokers de mensajería más utilizados. Esto facilita la configuración de clientes de base de datos de forma rápida.
+
+| Constante    | Puerto  | Tipo  | Descripción                                 |
+| :----------- | :------ | :---- | :------------------------------------------ |
+| `MYSQL`      | `3306`  | SQL   | Puerto por defecto de MySQL.                |
+| `POSTGRESQL` | `5432`  | SQL   | Puerto por defecto de PostgreSQL.           |
+| `SQL_SERVER` | `1433`  | SQL   | Puerto por defecto de Microsoft SQL Server. |
+| `MARIADB`    | `3306`  | SQL   | Puerto por defecto de MariaDB.              |
+| `ORACLE`     | `1521`  | SQL   | Puerto por defecto de Oracle Database.      |
+| `MONGO`      | `27017` | NoSQL | Puerto por defecto de MongoDB.              |
+| `REDIS`      | `6379`  | NoSQL | Puerto por defecto de Redis (Key-Value).    |
+| `CASSANDRA`  | `9042`  | NoSQL | Puerto por defecto de Apache Cassandra.     |
+| `RABBITMQ`   | `5672`  | Otros | Broker de mensajería (no es base de datos). |
+
+```typescript
+import { POSTGRESQL, DEV } from "@fang-js/fang/constants";
+
+const dbConfig = {
+  host: "localhost",
+  port: POSTGRESQL, // Uso de la constante
+};
+
+if (process.env.NODE_ENV === DEV) {
+  console.log("Corriendo en modo desarrollo con DB en puerto:", POSTGRESQL);
+}
+```
+
+<Aside type="tip">
+  {" "}
+  Usar estas constantes asegura que, si un puerto estándar cambia en tu
+  arquitectura global, solo tengas que actualizar la referencia en un lugar,
+  manteniendo tu código limpio y mantenible.{" "}
+</Aside>
