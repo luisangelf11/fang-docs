@@ -33,13 +33,13 @@ Al registrarse, Fang lanzará un log informativo indicando que el controlador ha
 
 ## `@Service`
 
-El decorador @Service asegura que tu lógica de negocio esté preparada para recibir el Contexto. En Fang JS, la regla de oro es: el primer argumento de cualquier método de servicio debe ser ctx: Context. Este decorador se auxilia de la implementación de la clase `BaseService`
+El decorador @Service asegura que tu lógica de negocio esté preparada para recibir el Contexto. En Fang JS, la regla de oro es: el primer argumento de cualquier método de servicio debe ser ctx: Context. Este decorador se auxilia de la clase `BaseService`.
 
 ```typescript
 import { Service, Context } from "@fang-js/fang";
 
 @Service
-export class UserService {
+export class UserService extends BaseService {
   async findAll(ctx: Context) {
     // ctx está disponible para acceder a query, params, etc.
     return { message: "Buscando datos..." };
@@ -49,13 +49,13 @@ export class UserService {
 
 ## `BaseService`
 
-Si quieres llevar el desarrollo al siguiente nivel, utiliza la clase `BaseService`. Esta clase abstracta "obliga" a tus métodos a seguir la firma correcta, dándote autocompletado inmediato mientras escribes.
+ Esta clase abstracta "obliga" a tus métodos a seguir la firma correcta, dándote autocompletado inmediato mientras escribes, esta clase debe extender a tu `service`.
 
 ```typescript
 import { BaseService, Context } from "@fang-js/fang";
 
 // Tu editor te avisará si olvidas incluir 'ctx' como primer parámetro
-export class PostService implements BaseService {
+export class PostService extends BaseService {
   async getPosts(ctx: Context, limit: number) {
     return [];
   }
@@ -83,11 +83,11 @@ export class PostService implements BaseService {
 ## Ejemplo de arquitectura
 
 ```typescript
-// 1. Definimos el Servicio con el contrato IBaseService
+// 1. Definimos el Servicio y heredamos de la clase BaseService
 import { Service, BaseService, Context } from "@fang-js/fang";
 
 @Service
-export class AuthService implements BaseService {
+export class AuthService extends BaseService {
   async login(ctx: Context) {
     const body = await ctx.body();
     return { token: "secret_wolf_token" };
