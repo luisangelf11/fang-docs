@@ -13,30 +13,66 @@ Fang JS está construido pensando en la máxima seguridad de tipos. Esta página
 
 Los Enums ayudan a evitar errores de escritura ("magic strings") en tu lógica de negocio.
 
+### `methods`
+
+Define los métodos HTTP más comunes.
+
+| Método    | Valor     | Descripción                                                            |
+| :-------- | :-------- | :--------------------------------------------------------------------- |
+| `GET`     | `GET`     | Solicita una representación del recurso especificado.                  |
+| `POST`    | `POST`    | Envía datos al recurso especificado para crear o procesar una entidad. |
+| `PUT`     | `PUT`     | Reemplaza completamente el recurso destino con el payload enviado.     |
+| `PATCH`   | `PATCH`   | Aplica modificaciones parciales a un recurso.                          |
+| `DELETE`  | `DELETE`  | Elimina el recurso especificado.                                       |
+| `HEAD`    | `HEAD`    | Igual que GET pero sin cuerpo de respuesta.                            |
+| `OPTIONS` | `OPTIONS` | Describe las opciones de comunicación disponibles para el recurso.     |
+| `CONNECT` | `CONNECT` | Establece un túnel hacia el servidor del recurso destino.              |
+| `TRACE`   | `TRACE`   | Realiza una prueba de loop-back del mensaje hasta el recurso destino.  |
+
 ### `httpStatus`
 
 Define los códigos de respuesta semánticos más comunes.
 
-| Miembro         | Valor | Descripción                                 |
-| :-------------- | :---- | :------------------------------------------ |
-| `OK`            | `200` | Petición exitosa.                           |
-| `Created`       | `201` | Recurso creado con éxito.                   |
-| `NoContent`     | `204` | Éxito sin cuerpo de respuesta.              |
-| `BadRequest`    | `400` | Error de sintaxis o validación del cliente. |
-| `Unauthorized`  | `401` | Requiere autenticación.                     |
-| `NotFound`      | `404` | Recurso no encontrado.                      |
-| `InternalError` | `500` | Error inesperado en el servidor.            |
+| Miembro               | Valor | Descripción                                                                |
+| :-------------------- | :---- | :------------------------------------------------------------------------- |
+| `OK`                  | `200` | Petición exitosa.                                                          |
+| `Created`             | `201` | Recurso creado con éxito.                                                  |
+| `Accepted`            | `202` | La petición fue recibida pero aún no procesada (útil para procesos async). |
+| `NoContent`           | `204` | Éxito sin cuerpo de respuesta.                                             |
+| `MovedPermanently`    | `301` | El recurso fue movido permanentemente a otra URL.                          |
+| `Found`               | `302` | El recurso se encuentra temporalmente en otra URL.                         |
+| `NotModified`         | `304` | Indica que el recurso no ha sido modificado (usado para caché).            |
+| `BadRequest`          | `400` | Error de sintaxis o validación del cliente.                                |
+| `Unauthorized`        | `401` | Requiere autenticación.                                                    |
+| `Forbidden`           | `403` | El cliente no tiene permisos para acceder al recurso.                      |
+| `NotFound`            | `404` | Recurso no encontrado.                                                     |
+| `MethodNotAllowed`    | `405` | Método HTTP conocido pero deshabilitado en el servidor.                    |
+| `Conflict`            | `409` | Conflicto con el estado actual del servidor (ej: duplicados).              |
+| `UnprocessableEntity` | `422` | La petición es válida pero contiene errores semánticos (validación).       |
+| `TooManyRequests`     | `429` | Demasiadas peticiones en un periodo de tiempo (rate limiting).             |
+| `InternalError`       | `500` | Error inesperado en el servidor.                                           |
+| `NotImplemented`      | `501` | El servidor no soporta la funcionalidad requerida.                         |
+| `BadGateway`          | `502` | El servidor recibió una respuesta inválida del servidor upstream.          |
+| `ServiceUnavailable`  | `503` | El servidor no está disponible temporalmente.                              |
+| `GatewayTimeout`      | `504` | El servidor no recibió respuesta a tiempo del servidor upstream.           |
 
 ### `TokenExpiration`
 
 Valores preconfigurados en segundos para la expiración de JWT o Cookies.
 
-- `FifteenMinutes`: 900s
-- `OneHour`: 3600s
-- `TwelveHours`: 43200s
-- `OneDay`: 86400s
-- `OneWeek`: 604800s
-- `OneMonth`: 2592000s
+| Miembro          | Valor (segundos) | Equivalente Tiempo | Descripción                                |
+| :--------------- | :--------------- | :----------------- | :----------------------------------------- |
+| `FifteenMinutes` | `900`            | 15 minutos         | Ideal para access tokens.                  |
+| `ThirtyMinutes`  | `1800`           | 30 minutos         | Sesiones de alta seguridad (ej: banca).    |
+| `OneHour`        | `3600`           | 1 hora             | Estándar para sesiones web.                |
+| `TwoHours`       | `7200`           | 2 horas            | Sesiones web extendidas.                   |
+| `FourHours`      | `14400`          | 4 horas            | Estándar para sesiones de jornada laboral. |
+| `EightHours`     | `28800`          | 8 horas            | Jornada laboral completa típica.           |
+| `TwelveHours`    | `43200`          | 12 horas           | Típico para sesiones de apps móviles.      |
+| `OneDay`         | `86400`          | 1 día              | Para sesiones de mayor duración.           |
+| `OneWeek`        | `604800`         | 7 días             | Usado en funcionalidad "Recordarme".       |
+| `TwoWeeks`       | `1209600`        | 14 días            | Estándar para refresh tokens extendidos.   |
+| `OneMonth`       | `2592000`        | 30 días            | Sesiones persistentes de largo plazo.      |
 
 ### `colors`
 
@@ -73,7 +109,7 @@ Opciones para el middleware de `cors()`.
 
 1. **origin:** `string` | `string[]` | `((origin: string) => boolean)`.
 
-2. **methods:** Array de methods `(Enum de GET, POST, etc.)`.
+2. **methods:** Array de string pero también puede ser usada con el `methods enum`.
 
 3. **allowedHeaders:** `string[]` de cabeceras permitidas.
 
