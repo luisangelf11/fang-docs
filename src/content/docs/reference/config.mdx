@@ -1,0 +1,79 @@
+---
+title: "Configuración de tsconfig.json y scripts"
+description: En este apartado te dejaremos la configuración recomendada para crear proyectos con Fang Js, seguido de los scripts del package.json.
+---
+
+En este apartado te dejaremos la configuración recomendada para crear proyectos con Fang Js, seguido de los scripts del package.json.
+
+# Configuración de tsconfig.json
+
+```json
+{
+  "compilerOptions": {
+    /* Layout del Proyecto */
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    /* Entorno y Resolución */
+    "target": "ES2023",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowJs": true,
+    "moduleDetection": "auto",
+    "types": ["node"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+
+    /* Tipado Estricto */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "isolatedModules": true,
+
+    /* Outputs y Debugging */
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    /* Extras y Frameworks */
+    "jsx": "react-jsx",
+    "experimentalDecorators": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+# Scripts del package.json
+
+```json
+{
+  "name": "api-auth",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "tsc",
+    "start": "node --env-file=.env dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.2.0",
+    "prisma": "^7.3.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@fang-js/fang": "^1.0.1",
+    "@prisma/adapter-better-sqlite3": "^7.3.0",
+    "@prisma/client": "^7.3.0"
+  }
+}
+```

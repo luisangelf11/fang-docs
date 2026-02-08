@@ -1,0 +1,263 @@
+---
+title: "Auth API: Fang JS + Prisma ORM"
+description: Un ejemplo práctico de autenticación utilizando Fang JS, Prisma ORM.
+---
+
+import { Aside, Steps, Card } from "@astrojs/starlight/components";
+
+¿Quieres ver de lo que es capaz **Fang JS** cuando se ensucia las manos? En este ejemplo, construiremos una API Rest básica, que nos permita hacer un auth de usuarios, para ello usaremos la arquitectura recomendada. En este ejemplo veremos:
+
+- **Persistencia:** Prisma ORM sobre una base de datos PostgreSQL/SQLite.
+- **Validación:** Esquemas de Zod importados desde `@fang-js/fang/zod`.
+- **Seguridad:** Protección de rutas con auth y uso de JWT.
+- **Arquitectura:** Separación clara entre Controladores y Servicios.
+
+## Requisitos Previos
+
+Antes de empezar, asegúrate de tener instalado Drizzle en tu proyecto:
+
+```bash
+npm install prisma @types/node @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg pg dotenv
+npx prisma init --db --output ../generated/prisma
+```
+
+## Implementación
+
+A continuación, se muestra la implementación de la API. Observa cómo el Context fluye a través de los servicios y cómo el middleware de auth protege las rutas sensibles de forma limpia.
+
+### Arquitectura del proyecto
+
+```
+├── 📁 prisma
+│   ├── 📁 migrations
+│   │   ├── 📁 20260202181730_init
+│   │   │   └── 📄 migration.sql
+│   │   └── ⚙️ migration_lock.toml
+│   └── 📄 schema.prisma
+├── 📁 src
+│   ├── 📁 auth
+│   │   ├── 📄 auth-controller.ts
+│   │   ├── 📄 auth-schema.ts
+│   │   └── 📄 auth-service.ts
+│   ├── 📁 config
+│   │   └── 📄 keys.ts
+│   ├── 📁 lib
+│   │   └── 📄 prisma.ts
+│   └── 📄 index.ts
+├── ⚙️ .gitignore
+├── 📄 dev.db
+├── ⚙️ package-lock.json
+├── ⚙️ package.json
+├── 📄 prisma.config.ts
+└── ⚙️ tsconfig.json
+```
+
+### Archivo principal (index.ts)
+
+```typescript
+import { Fang } from "@fang-js/fang";
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from "@fang-js/fang/exceptions";
+import { cors } from "@fang-js/fang/middlewares";
+import { methods } from "@fang-js/fang/types";
+import { AuthController } from "./auth/auth-controller.js";
+
+const app = new Fang();
+
+app.use(
+  cors({
+    origin: "*",
+    methods: [
+      methods.GET,
+      methods.POST,
+      methods.PUT,
+      methods.DELETE,
+      methods.PATCH,
+    ],
+  }),
+);
+
+app.get("/", (ctx) => {
+  ctx.ok({ message: "Hello World from fang" });
+});
+
+app.group("/auth", AuthController.register);
+
+app.onError((error, ctx) => {
+  if (error.message === "Invalid body schema")
+    return ctx.badRequest({ message: error.message, status: 400 });
+
+  if (error instanceof UnauthorizedException)
+    return ctx.unauthorized({
+      success: false,
+      message: error.message,
+      data: null,
+    });
+
+  if (error instanceof NotFoundException)
+    return ctx.notFound({
+      success: false,
+      message: error.message,
+      data: null,
+    });
+
+  if (error instanceof BadRequestException)
+    return ctx.badRequest({
+      success: false,
+      message: error.message,
+      data: null,
+    });
+
+  return ctx.internalError({
+    success: false,
+    message: error.message,
+    data: null,
+  });
+});
+
+app.listen();
+```
+
+### Controlador de Productos
+
+```typescript
+import { Controller, RouteGroup } from "@fang-js/fang";
+import { AuthService } from "./auth-service.js";
+import { auth } from "@fang-js/fang/middlewares";
+import { JWT_SECRET } from "../config/keys.js";
+
+@Controller
+export class AuthController {
+  static register(group: RouteGroup) {
+    const authService = new AuthService();
+
+    group.post("/register", authService.registerUser);
+    group.post("/login", authService.login);
+    group.get("/profile", auth(JWT_SECRET), authService.getProfile);
+  }
+}
+```
+
+### Esquema del auth
+
+```typescript
+import { z } from "@fang-js/fang/zod";
+
+export const userCreateSchema = z.object({
+  name: z.string(),
+  email: z.string(),
+  password: z.string().min(8),
+});
+
+export const authSchema = z.object({
+  email: z.string(),
+  password: z.string().min(8),
+});
+```
+
+### Servicio de Auth
+
+```typescript
+import { BaseService, Context, Service } from "@fang-js/fang";
+import { prisma } from "../lib/prisma.js";
+import { generateHash, signJwt, verifyHash } from "@fang-js/fang/security";
+import { TokenExpiration } from "@fang-js/fang/types";
+import { authSchema, userCreateSchema } from "./auth-schema.js";
+import { JWT_SECRET } from "../config/keys.js";
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from "@fang-js/fang/exceptions";
+
+@Service
+export class AuthService extends BaseService {
+  async registerUser(ctx: Context) {
+    const body = await ctx.body(userCreateSchema);
+    const userExists = await prisma.user.findUnique({
+      where: { email: body.email },
+    });
+
+    if (userExists) throw new BadRequestException("User already exists");
+
+    const hash = await generateHash(body.password);
+    const newUser = await prisma.user.create({
+      data: { name: body.name, email: body.email, password: hash },
+    });
+    const { password, ...result } = newUser;
+    ctx.created({ user: result });
+  }
+
+  async login(ctx: Context) {
+    const { email, password } = await ctx.body(authSchema);
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) throw new UnauthorizedException("Invalid credentials");
+
+    const match = await verifyHash(password, user.password);
+    if (!match) throw new UnauthorizedException("Invalid credentials");
+
+    const jwt = await signJwt(
+      { id: user.id, email: user.email },
+      {
+        expiresIn: TokenExpiration.OneHour,
+        secret: JWT_SECRET,
+      },
+    );
+    ctx.json({ success: "Welcome!", token: jwt });
+  }
+
+  async getProfile(ctx: Context) {
+    const user = await prisma.user.findFirst({
+      where: { id: Number(ctx.state.user.id) },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+      },
+    });
+    if (!user) throw new NotFoundException("User not found");
+
+    ctx.json({ user });
+  }
+}
+```
+
+### Configuración de Prisma
+
+```typescript
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaClient } from "@prisma/client";
+
+const connectionString = `${process.env.DATABASE_URL}`;
+
+const adapter = new PrismaBetterSqlite3({ url: connectionString });
+const prisma = new PrismaClient({ adapter });
+
+export { prisma };
+```
+
+## Puntos Clave del Ejemplo
+
+<Card title="Cero Fricción" icon="rocket">
+  {" "}
+  Nota cómo el middleware de auth inyecta automáticamente al usuario en
+  ctx.state.user, disponible para cualquier ruta posterior.{" "}
+</Card>
+
+<Card title="Seguridad de Hashing" icon="shieldCheck">
+  {" "}
+  Las contraseñas no se guardan en texto plano; usamos generateHash de Fang para
+  aplicar scrypt antes de persistir en Prisma.{" "}
+</Card>
+
+<Card title="Respuestas Semánticas" icon="approve-check">
+  {" "}
+  En lugar de configurar cabeceras manualmente, podríamos usar también ctx.ok(),
+  ctx.created() y las excepciones como NotFoundException.{" "}
+</Card>

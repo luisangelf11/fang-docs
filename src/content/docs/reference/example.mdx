@@ -1,254 +1,217 @@
 ---
-title: "API Rest: Fang JS + Prisma"
-description: Un ejemplo práctico de nivel producción utilizando Fang JS, Prisma ORM y autenticación JWT.
+title: "API Rest: Fang JS + Drizzle ORM"
+description: Un ejemplo práctico de nivel producción utilizando Fang JS, Drizzle ORM.
 ---
 
 import { Aside, Steps, Card } from "@astrojs/starlight/components";
 
-# Ejemplo de API de Alto Rendimiento
+¿Quieres ver de lo que es capaz **Fang JS** cuando se ensucia las manos? En este ejemplo, construiremos una API Rest básica, que nos permita hacer un CRUD de productos, para ello usaremos la arquitectura recomendada. En este ejemplo veremos:
 
-¿Quieres ver de lo que es capaz **Fang JS** cuando se ensucia las manos? En este ejemplo, construiremos una API profesional de gestión de tareas que implementa todo el stack de seguridad y persistencia:
-
-- **Persistencia**: Prisma ORM sobre una base de datos PostgreSQL/SQLite.
-- **Seguridad**: Autenticación nativa con el middleware de JWT de Fang.
-- **Validación**: Esquemas de Zod importados desde `@fang-js/fang/zod`.
-- **Arquitectura**: Separación clara entre Controladores y Servicios.
-
-<Aside type="caution" title="Recomendación de DX">
-  El siguiente ejemplo está escrito en **JavaScript** para demostrar la
-  simplicidad del motor. Sin embargo, para una experiencia de desarrollo (DX)
-  superior, **recomendamos encarecidamente usar TypeScript**. Como hemos visto
-  en las páginas anteriores, Fang JS brilla con TS gracias al autocompletado de
-  los Enums, el tipado del Contexto y el soporte de la interfaz `IBaseService`.
-  **No seas flojo, usa TS :3**
-</Aside>
+- **Persistencia:** Drizzle ORM sobre una base de datos PostgreSQL/SQLite.
+- **Validación:** Esquemas de Zod importados desde `@fang-js/fang/zod`.
+- **Arquitectura:** Separación clara entre Controladores y Servicios.
 
 ## Requisitos Previos
 
-Antes de empezar, asegúrate de tener instalado Prisma en tu proyecto:
+Antes de empezar, asegúrate de tener instalado Drizzle en tu proyecto:
 
 ```bash
-npm install prisma --save-dev
-npx prisma init
+npm i drizzle-orm @libsql/client dotenv
+npm i -D drizzle-kit tsx
 ```
 
 ## Implementación
 
-A continuación, se muestra la implementación de la API. Observa cómo el Context fluye a través de los servicios y cómo el middleware de auth protege las rutas sensibles de forma limpia.
+A continuación, se muestra la implementación de la API. Observa cómo el Context fluye a través de los servicios y cómo se usan los métodos del context y las excepciones.
 
 ### Arquitectura del proyecto
 
 ```text
-my-api/
-├── src/
-│   ├── user/
-│   │   ├── user-controller.js
-│   │   ├── user-service.js
-│   │   └── schema.js
-│   ├── lib/
-│   │   └── prisma.js
-│   └── index.js
-├── package.json
-└── .env
+├── 📁 src
+│   ├── 📁 config
+│   │   └── 📄 keys.ts
+│   ├── 📁 database
+│   │   └── 📄 schema.ts
+│   ├── 📁 lib
+│   │   └── 📄 drizzle.ts
+│   ├── 📁 product
+│   │   ├── 📄 product-controller.ts
+│   │   ├── 📄 product-scheme.ts
+│   │   └── 📄 product-service.ts
+│   └── 📄 index.ts
+├── 📄 dev.db
+├── 📄 drizzle.config.ts
+├── ⚙️ package-lock.json
+├── ⚙️ package.json
+└── ⚙️ tsconfig.json
 ```
 
-### Archivo principal (index.js)
+### Archivo principal (index.ts)
 
-```javascript
+```typescript
 import { Fang } from "@fang-js/fang";
-import { BadRequestException, UnauthorizedException } from "@fang-js/fang/exceptions";
-import { UserController } from "./user/user-controller.js";
-import { cors, serveStatic } from "@fang-js/fang/middlewares";
+import { ProductController } from "./product/product-controller.js";
+import { NotFoundException } from "@fang-js/fang/exceptions";
+import { cors } from "@fang-js/fang/middlewares";
 import { methods } from "@fang-js/fang/types";
 
 const app = new Fang();
 
-//Cors
 app.use(
   cors({
-    origin: "http://127.0.0.1:5500",
+    origin: "*",
     methods: [methods.GET, methods.POST, methods.PUT, methods.DELETE],
   }),
 );
 
-//Static files
-app.use(serveStatic("public", "/static"));
-
-//Main route
 app.get("/", (ctx) => {
-  ctx.json({ message: "Hello World!" });
+  ctx.ok({ message: "Hello World from CRUD fang!" });
 });
 
-//User Group route
-app.group("/api/user", UserController.register);
+app.group("/product", ProductController.register);
 
-app.onError((err, ctx) => {
-  if (err instanceof UnauthorizedException)
-    return ctx.unauthorized({
-      success: false,
-      message: err.message,
-      data: null,
-    });
+app.onError((error, ctx) => {
+  if (error instanceof NotFoundException)
+    return ctx.notFound({ message: error.message });
 
-  if (err instanceof BadRequestException)
-    return ctx.badRequest({ success: false, message: err.message, data: null });
-
-  return ctx.internalError({
-    success: false,
-    message: err.message,
-    data: null,
-  });
+  return ctx.internalError({ message: error.message });
 });
 
 app.listen();
 ```
 
-### Controlador de Usuarios
+### Controlador de Productos
 
-```javascript
-import { auth } from "@fang-js/fang/middlewares";
-import { UserService } from "./user-service.js";
+```typescript
+import { Controller, RouteGroup } from "@fang-js/fang";
+import { ProductService } from "./product-service.js";
 
-export class UserController {
-  static register(group) {
-    const service = new UserService();
-    const secret = process.env.JWT_SECRET;
+@Controller
+export class ProductController {
+  static register(group: RouteGroup) {
+    const productService = new ProductService();
 
-    // Public routes
-    group.get("/", (ctx) => service.getAll(ctx));
-    group.get("/getById/:id", (ctx) => service.getById(ctx));
-    group.post("/register", (ctx) => service.registerUser(ctx));
-    group.post("/auth", (ctx) => service.login(ctx));
-    group.delete("/:id", (ctx) => service.deleteUser(ctx));
-
-    // Protected routes
-    group.get("/profile", auth(secret), (ctx) => service.getProfile(ctx));
-    group.put("/update", auth(secret), (ctx) => service.update(ctx));
+    group.get("/", productService.getProducts);
+    group.get("/:id", productService.getProductById);
+    group.post("/", productService.createProduct);
+    group.put("/:id", productService.updateProduct);
+    group.delete("/:id", productService.deleteProduct);
   }
 }
 ```
 
-### Servicios de Usuarios
+### Esquema de Productos
 
-```javascript
-import { generateHash, signJwt, verifyHash } from "@fang-js/fang/security";
-import { prisma } from "../lib/prisma.js";
-import { authSchema, userCreateSchema, updateSchema } from "./user.schema.js";
-import { TokenExpiration } from "@fang-js/fang/types";
+```typescript
+import { z } from "@fang-js/fang/zod";
 
-export class UserService {
-  async getAll(ctx) {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-    ctx.json({ users });
+export const productBodyScheme = z.object({
+  name: z.string(),
+  price: z.number(),
+  description: z.string().max(255),
+  stock: z.number(),
+});
+```
+
+### Servicio de Productos
+
+```typescript
+import { BaseService, Context, Service } from "@fang-js/fang";
+import db from "../lib/drizzle.js";
+import { productTable } from "../database/schema.js";
+import { productBodyScheme } from "./product-scheme.js";
+import { eq } from "drizzle-orm/sql";
+import { NotFoundException } from "@fang-js/fang/exceptions";
+
+@Service
+export class ProductService extends BaseService {
+  async getProducts(ctx: Context) {
+    const products = await db.select().from(productTable);
+    ctx.ok({ products });
   }
 
-  async getById(ctx) {
+  async getProductById(ctx: Context) {
     const { id } = ctx.params;
-    const user = await prisma.user.findUnique({
-      where: { id: Number(id) },
+    const [product] = await db
+      .select()
+      .from(productTable)
+      .where(eq(productTable.id, Number(id)));
+
+    if (!product)
+      throw new NotFoundException(`Product with ID ${id} not found`);
+
+    ctx.ok({ product });
+  }
+
+  async createProduct(ctx: Context) {
+    const { name, description, price, stock } =
+      await ctx.body(productBodyScheme);
+
+    const [newProduct] = await db
+      .insert(productTable)
+      .values({
+        name,
+        description,
+        price,
+        stock,
+      })
+      .returning();
+
+    ctx.created({
+      message: "Product created successfully!",
+      product: newProduct,
     });
-    if (!user) return ctx.json({ error: "User not found" }, 404);
-    ctx.json({ user });
   }
 
-  async registerUser(ctx) {
-    const { name, email, password } = await ctx.body(userCreateSchema);
-    const userExists = await prisma.user.findUnique({ where: { email } });
-
-    if (userExists) return ctx.json({ error: "User already exists" }, 400);
-
-    const hash = await generateHash(password);
-    const newUser = await prisma.user.create({
-      data: { name, email, password: hash },
-    });
-    ctx.json({ user: newUser });
-  }
-
-  async login(ctx) {
-    const { email, password } = await ctx.body(authSchema);
-    const user = await prisma.user.findUnique({ where: { email } });
-
-    if (!user) return ctx.unauthorized({ error: "Invalid credentials" });
-
-    const match = await verifyHash(password, user.password);
-    if (!match) return ctx.unauthorized({ error: "Invalid credentials" });
-
-    const jwt = await signJwt(
-      { id: user.id, email: user.email },
-      { expiresIn: TokenExpiration.OneHour, secret: process.env.JWT_SECRET },
-    );
-    ctx.json({ success: "Welcome!", token: jwt });
-  }
-
-  async getProfile(ctx) {
-    const user = await prisma.user.findFirst({
-      where: { id: Number(ctx.state.user.id) },
-    });
-    ctx.json({ user });
-  }
-
-  async update(ctx) {
-    const { name, password } = await ctx.body(updateSchema);
-    const id = Number(ctx.state.user.id);
-
-    const hash = await generateHash(password);
-    await prisma.user.update({
-      where: { id },
-      data: { name, password: hash },
-    });
-    ctx.json({ message: "User updated" });
-  }
-
-  async deleteUser(ctx) {
+  async updateProduct(ctx: Context) {
     const { id } = ctx.params;
-    try {
-      await prisma.user.delete({ where: { id: Number(id) } });
-      ctx.json({ message: "User deleted" });
-    } catch (e) {
-      ctx.json({ error: "User not found" }, 404);
-    }
+    const body = await ctx.body(productBodyScheme);
+
+    const [updatedProduct] = await db
+      .update(productTable)
+      .set({
+        ...body,
+      })
+      .where(eq(productTable.id, Number(id)))
+      .returning();
+
+    if (!updatedProduct)
+      throw new NotFoundException(`Product with ID ${id} not found`);
+
+    ctx.json({
+      message: "Product updated successfully!",
+      product: updatedProduct,
+    });
+  }
+
+  async deleteProduct(ctx: Context) {
+    const { id } = ctx.params;
+
+    const [deletedProduct] = await db
+      .delete(productTable)
+      .where(eq(productTable.id, Number(id)))
+      .returning();
+
+    if (!deletedProduct)
+      throw new NotFoundException(`Product with ID ${id} not found`);
+
+    ctx.json({
+      message: "Product deleted successfully!",
+      product: deletedProduct,
+    });
   }
 }
 ```
 
-### Configuración de Prisma
+### Configuración de Drizzle
 
-```javascript
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient } from "@prisma/client";
+```typescript
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
+import { DB_FILE_NAME } from "../config/keys.js";
 
-const connectionString = `${process.env.DATABASE_URL}`;
+const client = createClient({ url: DB_FILE_NAME });
+const db = drizzle({ client });
 
-const adapter = new PrismaBetterSqlite3({ url: connectionString });
-const prisma = new PrismaClient({ adapter });
-
-export { prisma };
+export default db;
 ```
-
-## Puntos Clave del Ejemplo
-
-<Card title="Cero Fricción" icon="rocket">
-  {" "}
-  Nota cómo el middleware de auth inyecta automáticamente al usuario en
-  ctx.state.user, disponible para cualquier ruta posterior.{" "}
-</Card>
-
-<Card title="Seguridad de Hashing" icon="shieldCheck">
-  {" "}
-  Las contraseñas no se guardan en texto plano; usamos generateHash de Fang para
-  aplicar scrypt antes de persistir en Prisma.{" "}
-</Card>
-
-<Card title="Respuestas Semánticas" icon="approve-check">
-  {" "}
-  En lugar de configurar cabeceras manualmente, podríamos usar también ctx.ok(), ctx.created() y
-  las excepciones como NotFoundException.{" "}
-</Card>
