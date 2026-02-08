@@ -7,12 +7,15 @@ import { Aside, Steps, Card, CardGrid } from "@astrojs/starlight/components";
 
 **Fang JS** es un micro-framework minimalista, ultraligero y fuertemente tipado diseñado para Node.js. Su filosofía se basa en eliminar dependencias externas innecesarias para centrarse en lo que realmente importa: el desarrollo de APIs REST de alto rendimiento.
 
-<Aside type="tip" title="Estado del Proyecto: Versión 1.0.0">
-  Estás explorando la **versión 1.0.0** de Fang JS. Esta es nuestra primera entrega oficial, diseñada para demostrar el potencial de un framework *zero-deps* sólido y funcional desde el primer día.
-  
-  Lo que ves aquí es solo el comienzo de la manada. Dependiendo del apoyo, las estrellas en GitHub y la adopción de la comunidad, **Fang JS está destinado a evolucionar drásticamente**, incorporando nuevas funcionalidades y optimizaciones que llevarán el desarrollo en Node.js al siguiente nivel. 
-  
-  **El futuro de Fang depende de ustedes. ¡Hagámoslo crecer!**
+<Aside type="tip" title="Estado del Proyecto: Versión 1.0.2">
+  Estás explorando la **versión 1.0.2** de Fang JS. Esta es nuestra primera
+  entrega oficial, diseñada para demostrar el potencial de un framework
+  *zero-deps* sólido y funcional desde el primer día. Lo que ves aquí es solo el
+  comienzo de la manada. Dependiendo del apoyo, las estrellas en GitHub y la
+  adopción de la comunidad, **Fang JS está destinado a evolucionar
+  drásticamente**, incorporando nuevas funcionalidades y optimizaciones que
+  llevarán el desarrollo en Node.js al siguiente nivel. **El futuro de Fang
+  depende de ustedes. ¡Hagámoslo crecer!**
 </Aside>
 
 ## ¿Por qué existe Fang JS?
@@ -52,11 +55,14 @@ En un ecosistema saturado de abstracciones pesadas y "magia negra" que oculta el
 
 A diferencia de otros frameworks que arrastran decenas de dependencias transitivas, Fang JS mantiene su árbol de dependencias limpio.
 
-| Característica   | Express.js   | Koa.js       | **Fang JS** 🐺     |
-| :--------------- | :----------- | :----------- | :----------------- |
-| **Dependencias** | ~30+         | ~20+         | **1 (Zod)**        |
-| **Validación**   | Manual       | Manual       | **Nativa con Zod** |
-| **TypeScript**   | Vía `@types` | Vía `@types` | **Nativo**         |
+| Característica   | Express.js               | Koa.js                 | **Fang-js**🐺                     |
+| :--------------- | :----------------------- | :--------------------- | :-------------------------------- |
+| **Filosofía**    | "Incluye lo básico"      | Minimalista / Base     | **Estrictamente Tipado / Seguro** |
+| **Validación**   | Manual / Terceros        | Terceros               | **Integración Nativa con Zod**    |
+| **Middleware**   | Basado en Callbacks      | Async (Modelo Cebolla) | **Async (Modelo Cebolla)**        |
+| **TypeScript**   | Vía `@types/express`     | Vía `@types/koa`       | **Nativo (Soporte de primera)**   |
+| **Cookies**      | Requiere `cookie-parser` | Integrado (sin Zod)    | **Nativo + Esquema Zod**          |
+| **Dependencias** | ~30+ transitivas         | ~20+ transitivas       | **1 (Zod)**                       |
 
 ---
 

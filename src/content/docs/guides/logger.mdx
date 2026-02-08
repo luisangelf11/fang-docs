@@ -17,7 +17,7 @@ import { Logger } from "@fang-js/fang";
 const logger = new Logger();
 
 logger.info("El servidor está listo para recibir peticiones");
-logger.warm("La conexión a la base de datos es lenta");
+logger.warn("La conexión a la base de datos es lenta");
 logger.error("No se pudo procesar la transacción");
 ```
 
@@ -28,8 +28,20 @@ El Logger viene con métodos preconfigurados para los niveles de log más comune
 | Método       | Etiqueta | Color    | Uso sugerido                                              |
 | :----------- | :------- | :------- | :-------------------------------------------------------- |
 | `info(msg)`  | [INFO]   | Cian     | Eventos normales, inicio de procesos o registros.         |
-| `warm(msg)`  | [WARM]   | Amarillo | Alertas que no detienen el flujo pero requieren atención. |
+| `warn(msg)`  | [WARM]   | Amarillo | Alertas que no detienen el flujo pero requieren atención. |
 | `error(msg)` | [ERROR]  | Rojo     | Excepciones, fallos críticos o errores de validación.     |
+
+## Log http del nucleo de Fang
+
+Fang utiliza un método de la clase `Logger` para las peticiones http (como lo hace el middleware morgan en express), este método es `logHttp()`, el cual cuenta con los siguientes parámetros:
+
+| Parámetro    | Descripción                               |
+| :----------- | :---------------------------------------- |
+| `method`     | Recibe el verbo http usado en la ruta     |
+| `url`        | Ruta a la que se hizo la petición         |
+| `ms`         | Tiempo en milisegundos                    |
+| `statusCode` | Código de estado de la petición           |
+| `isError`    | Cambia el color del statusCode si es true |
 
 ## Logs Personalizados
 
@@ -47,6 +59,75 @@ logger.custom("Nueva conexión establecida", "DATABASE", colors.green);
 // Ejemplo: Log para un evento de seguridad
 logger.custom("Intento de acceso fallido", "AUTH", colors.magenta);
 ```
+
+## Personalización del Logger
+
+Por defecto, Fang-js utiliza una instancia interna de la clase `Logger` para registrar eventos en la consola (como logHttp y warn). Sin embargo, entendemos que en entornos de producción podrías necesitar enviar estos registros a servicios externos (como Datadog, CloudWatch o un archivo local).
+
+Gracias a que el núcleo de Fang es agnóstico a la implementación del logger, puedes sustituirlo fácilmente. Solo necesitas crear una clase que implemente la interfaz `ILogger` y configurarla mediante el método `app.setLogger()`.
+
+### Ejemplo: Implementando un Logger de persistencia
+
+En este ejemplo, crearemos un logger que guarda cada petición HTTP en un archivo llamado `access.log`.
+
+```typescript
+import { Fang, ILogger } from "@fang-js/fang";
+import { colors } from "@fang-js/fang/types";
+import { appendFileSync } from "node:fs";
+
+class FileLogger implements ILogger {
+  // Implementación del registro HTTP para guardar en archivo
+  logHttp(
+    method: string,
+    url: string,
+    ms: number,
+    statusCode: number,
+    isError?: boolean,
+  ) {
+    const logEntry = `[${new Date().toISOString()}] ${method} ${url} 
+    - ${statusCode} (${ms}ms)\n`;
+
+    // Guardamos el log en un archivo físico
+    appendFileSync("access.log", logEntry);
+
+    // También lo mostramos en consola para desarrollo
+    console.log(`${colors.cyan}${method}${colors.reset} ${url} - ${ms}ms`);
+  }
+
+  // --- Otros métodos de la interfaz ILogger ---
+  // Deben implementarse según tus necesidades:
+
+  /** info(msg: string) { ... } */
+  /** warn(msg: string) { ... } */
+  /** error(msg: string) { ... } */
+  /** custom(msg: string, tag: string, color: colors) { ... } */
+
+  // Nota: TS te pedirá definir los métodos aunque estén vacíos
+  // para cumplir con la interfaz.
+  info() {}
+  warn() {}
+  error() {}
+  custom() {}
+}
+
+const app = new Fang();
+
+// Inyectamos el logger personalizado
+app.setLogger(new FileLogger());
+
+app.get("/", (ctx) => {
+  ctx.json({ message: "Log registrado en archivo" });
+});
+
+app.listen();
+```
+
+### ¿Por qué hacer esto?
+- **Adaptabilidad:** Cambia el destino de tus logs sin tocar la lógica de tus rutas.
+
+- **Limpieza:** Mantienes el núcleo de tu aplicación libre de configuraciones pesadas de terceros.
+
+- **Control Total:** Tú decides qué información mostrar y qué colores usar según el entorno (desarrollo o producción).
 
 ## ¿Por qué usar el Logger de Fang?
 
