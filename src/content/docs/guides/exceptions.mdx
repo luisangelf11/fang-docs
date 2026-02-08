@@ -23,34 +23,49 @@ throw new HttpException("Mensaje personalizado", 418);
 Fang incluye las excepciones más comunes para que tu código sea más semántico y legible:
 
 <CardGrid>
-  {" "}
-  <Card title="400: BadRequest" icon="warning">
-    {" "}
-    BadRequestException{" "}
-  </Card>{" "}
+  <Card title="400: Bad Request" icon="warning">
+    BadRequestException / InvalidBodyScheme
+  </Card>
   <Card title="401: Unauthorized" icon="lock">
-    {" "}
-    UnauthorizedException{" "}
-  </Card>{" "}
+    UnauthorizedException
+  </Card>
   <Card title="403: Forbidden" icon="error">
-    {" "}
-    ForbiddenException{" "}
-  </Card>{" "}
-  <Card title="404: NotFound" icon="magnifier">
-    {" "}
-    NotFoundException{" "}
-  </Card>{" "}
-  <Card title="500: InternalError" icon="setting">
-    {" "}
-    InternalServerErrorException{" "}
-  </Card>{" "}
+    ForbiddenException
+  </Card>
+  <Card title="404: Not Found" icon="magnifier">
+    NotFoundException
+  </Card>
+  <Card title="405: Method Not Allowed" icon="close">
+    MethodNotAllowedException
+  </Card>
+  <Card title="409: Conflict" icon="random">
+    ConflictException
+  </Card>
+  <Card title="422: Unprocessable Entity" icon="document">
+    UnprocessableEntityException
+  </Card>
+  <Card title="429: Too Many Requests" icon="rocket">
+    TooManyRequestsException
+  </Card>
+  <Card title="500: Internal Error" icon="setting">
+    InternalServerErrorException
+  </Card>
+  <Card title="502: Bad Gateway" icon="laptop">
+    BadGatewayException
+  </Card>
+  <Card title="503: Service Unavailable" icon="bars">
+    ServiceUnavailableException
+  </Card>
+  <Card title="504: Gateway Timeout" icon="moon">
+    GatewayTimeoutException
+  </Card>
 </CardGrid>
 
 ### Ejemplo de Uso en un Servicio
 
 ```typescript
 @Service
-export class UserService {
+export class UserService extends BaseService {
   async findById(ctx: Context, id: string) {
     const user = await db.users.find(id);
 
