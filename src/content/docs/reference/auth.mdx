@@ -14,11 +14,11 @@ import { Aside, Steps, Card } from "@astrojs/starlight/components";
 
 ## Requisitos Previos
 
-Antes de empezar, asegúrate de tener instalado Drizzle en tu proyecto:
+Antes de empezar, asegúrate de tener instalado Prisma en tu proyecto:
 
 ```bash
-npm install prisma @types/node @types/pg --save-dev
-npm install @prisma/client @prisma/adapter-pg pg
+npm install prisma @types/node @types/better-sqlite3 --save-dev 
+npm install @prisma/client @prisma/adapter-better-sqlite3
 npx prisma init --db --output ../generated/prisma
 ```
 
