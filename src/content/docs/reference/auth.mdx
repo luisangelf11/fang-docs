@@ -19,7 +19,7 @@ Antes de empezar, asegúrate de tener instalado Prisma en tu proyecto:
 ```bash
 npm install prisma @types/node @types/better-sqlite3 --save-dev 
 npm install @prisma/client @prisma/adapter-better-sqlite3
-npx prisma init --db --output ../generated/prisma
+npx prisma init --datasource-provider sqlite --output ../generated/prisma
 ```
 
 ## Implementación
