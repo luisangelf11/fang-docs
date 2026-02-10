@@ -49,7 +49,7 @@ export class UserService extends BaseService {
 
 ## `BaseService`
 
- Esta clase abstracta "obliga" a tus métodos a seguir la firma correcta, dándote autocompletado inmediato mientras escribes, esta clase debe extender a tu `service`.
+Esta clase abstracta "obliga" a tus métodos a seguir la firma correcta, dándote autocompletado inmediato mientras escribes, esta clase debe extender a tu `service`.
 
 ```typescript
 import { BaseService, Context } from "@fang-js/fang";
@@ -108,4 +108,59 @@ export class AuthController {
 
 // 3. Registro en la App
 app.group("/auth", AuthController.register);
+```
+
+## `@ReflectionController`
+
+A diferencia del registro manual usando el decorador `@Controller`, el decorador `@ReflectionController` permite una arquitectura totalmente automatizada. Este decorador recibe un prefijo de ruta y marca la clase para que el motor de Autoloading de Fang JS la encuentre y registre automáticamente.
+
+<Aside type="tip" title="Ventaja Clave">
+  {" "}
+  Al usar este decorador junto con app.autoloadControllers(), no necesitas
+  importar tus controladores en el archivo principal. Fang los descubrirá y
+  montará por ti.{" "}
+</Aside>
+
+Para usarlo, define el prefijo de la ruta en el decorador y asegúrate de implementar el método estático register.
+
+```typescript
+import { ReflectionController, type RouteGroup } from "@fang-js/fang";
+import { PeopleService } from "./people-service.js";
+
+@ReflectionController("/people")
+export class PeopleController {
+  static register(group: RouteGroup) {
+    const peopleService = new PeopleService();
+
+    group.get("/", (ctx) => peopleService.getPeople(ctx));
+  }
+}
+```
+
+### Funcionamiento interno
+
+- **Metadata:** El decorador normaliza el path (asegurando que empiece con /) y lo guarda como metadatos ocultos en la clase.
+
+- **Descubrimiento:** Cuando llamas a autoloadControllers, Fang escanea tus archivos, busca estos metadatos y ejecuta el método register.
+
+- **Aislamiento:** Cada controlador se convierte en un grupo de rutas independiente, manteniendo tu main.ts limpio de importaciones masivas.
+
+### Ejemplo de integración
+
+```typescript
+import { Fang } from "@fang-js/fang";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const app = new Fang();
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+async function bootstrap() {
+  // Escanea la carpeta actual y registra PeopleController automáticamente bajo /people
+  await app.autoloadControllers(__dirname);
+
+  app.listen(3000);
+}
+
+bootstrap();
 ```

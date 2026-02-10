@@ -1,0 +1,55 @@
+---
+title: Autoloading de Controladores
+description: Registra de manera automatizada tus controllers.
+---
+
+import { Aside, Card, CardGrid, Steps } from "@astrojs/starlight/components";
+
+El método autoloadControllers es el motor de descubrimiento de Fang JS. Su función es escanear tu sistema de archivos, encontrar clases decoradas con @ReflectionController y activarlas automáticamente sin que tengas que escribir una sola línea de import manual.
+
+<Aside type="caution" title="Importante">
+  {" "}
+  Este método es asíncrono. Para garantizar que todas tus rutas estén listas
+  antes de que el servidor reciba peticiones, debes usar await dentro de una
+  función de arranque (bootstrap).{" "}
+</Aside>
+
+## Uso Básico
+El autoloader requiere la ruta absoluta de la carpeta donde se encuentran tus controladores. En entornos ESM (EcmaScript Modules), recomendamos usar import.meta.url.
+
+```typescript
+import { Fang } from "@fang-js/fang";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const app = new Fang();
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+async function bootstrap() {
+  // Escaneo recursivo de la carpeta actual
+  await app.autoloadControllers(__dirname);
+  app.listen();
+}
+
+bootstrap();
+```
+
+## ¿Cómo funciona el escaneo?
+
+<Steps>
+1. **Escaneo Recurrsivo:** Fang recorre la carpeta indicada y todas sus subcarpetas.
+2. **Filtro Inteligente:** Ignora automáticamente archivos de definición (.d.ts), carpetas ocultas (como .git) y la carpeta node_modules.
+3. **Importación Dinámica:** Carga los módulos en tiempo de ejecución usando import().
+4. **Validación de Metadatos:** Busca el símbolo secreto inyectado por @ReflectionController.
+5. **Registro de Grupo:** Si lo encuentra, extrae el prefijo y ejecuta el método static register vinculado a la clase.
+</Steps>
+
+## El vínculo con `@ReflectionController`
+
+Para que el proceso de carga automática funcione, es estrictamente necesario que tus clases estén marcadas con el decorador `@ReflectionController`. El método `autoloadControllers` no registra cualquier clase que encuentre en los archivos; actúa como un radar que solo detecta aquellas que poseen los metadatos inyectados por el decorador. Si olvidas añadir el decorador a una clase, Fang simplemente la ignorará durante el escaneo, permitiéndote tener archivos auxiliares o clases de soporte en la misma carpeta de controladores sin que se registren como rutas por error.
+
+## Ventajas de esta Arquitectura
+
+- **Escalabilidad:** Puedes añadir 100 controladores nuevos simplemente creando archivos en la carpeta designada. No hay archivos de configuración centralizados que mantener.
+- **Limpieza:** Tu archivo index.ts se mantiene pequeño y legible, sin importar cuán grande sea tu API.
+- **Encapsulamiento:** Cada controlador decide su propio prefijo y sus propias rutas, promoviendo una estructura modular.

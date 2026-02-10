@@ -24,6 +24,7 @@ export default defineConfig({
             { label: "Context", slug: "guides/context" }, 
             { label: "Middlewares", slug: "guides/middlewares" }, 
             { label: "Decorators", slug: "guides/decorators" },
+            { label: "Autoloading de controladores", slug: "guides/autoloading-controller" },
             { label: "Zod (Validación)", slug: "guides/zod" },
             { label: "Exceptions", slug: "guides/exceptions" },
             { label: "Seguridad", slug: "guides/security" },
